@@ -45,7 +45,6 @@ document.querySelector('#app').innerHTML = `
               </dl>
             </div>
           </aside>
-        </section>
       </div>
     </main>
   </div>

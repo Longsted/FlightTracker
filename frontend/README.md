@@ -17,15 +17,10 @@ Frontend til Live Flight Tracker-projektet.
 
 ## Kom i gang
 
-Installer afhængighederne fra frontend-mappen:
+Kør kommandoerne fra frontend-mappen:
 
 ```bash
 npm install
-```
-
-Start udviklingsserveren:
-
-```bash
 npm run dev
 ```
 
@@ -35,4 +30,10 @@ Kør ESLint:
 
 ```bash
 npm run lint
-``
+```
+
+Byg frontend-projektet:
+
+```bash
+npm run build
+```
