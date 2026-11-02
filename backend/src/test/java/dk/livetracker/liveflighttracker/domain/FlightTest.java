@@ -11,30 +11,50 @@ class FlightTest {
 
     @Test
     void hasPositionReturnsTrueWhenCoordinatesArePresent() {
+        // Given
         Flight flight = createFlight(10.0, 55.0);
 
-        assertTrue(flight.hasPosition());
+        // When
+        boolean result = flight.hasPosition();
+
+        // Then
+        assertTrue(result);
     }
 
     @Test
     void hasPositionReturnsFalseWhenLongitudeIsNull() {
+        // Given
         Flight flight = createFlight(null, 55.0);
 
-        assertFalse(flight.hasPosition());
+        // When
+        boolean result = flight.hasPosition();
+
+        // Then
+        assertFalse(result);
     }
 
     @Test
     void hasPositionReturnsFalseWhenLatitudeIsNull() {
+        // Given
         Flight flight = createFlight(10.0, null);
 
-        assertFalse(flight.hasPosition());
+        // When
+        boolean result = flight.hasPosition();
+
+        // Then
+        assertFalse(result);
     }
 
     @Test
     void hasPositionReturnsFalseWhenBothCoordinatesAreNull() {
+        // Given
         Flight flight = createFlight(null, null);
 
-        assertFalse(flight.hasPosition());
+        // When
+        boolean result = flight.hasPosition();
+
+        // Then
+        assertFalse(result);
     }
 
     private Flight createFlight(Double longitude, Double latitude) {
