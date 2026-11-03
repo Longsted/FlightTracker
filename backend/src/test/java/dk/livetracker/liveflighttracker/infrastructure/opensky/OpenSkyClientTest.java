@@ -1,5 +1,8 @@
-
 package dk.livetracker.liveflighttracker.infrastructure.opensky;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.exception.OpenSkyApiException;
@@ -12,153 +15,134 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
-
 class OpenSkyClientTest {
 
-    private static final String TOKEN_URL =
-            "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token";
+  private static final String TOKEN_URL =
+      "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token";
 
-    private static final String STATES_URL =
-            "https://opensky-network.org/api/states/all";
+  private static final String STATES_URL = "https://opensky-network.org/api/states/all";
 
-    private MockRestServiceServer mockServer;
-    private OpenSkyClient client;
+  private MockRestServiceServer mockServer;
+  private OpenSkyClient client;
 
-    @BeforeEach
-    void setUp() {
-        RestClient.Builder restClientBuilder = RestClient.builder();
+  @BeforeEach
+  void setUp() {
+    RestClient.Builder restClientBuilder = RestClient.builder();
 
-        mockServer = MockRestServiceServer
-                .bindTo(restClientBuilder)
-                .build();
+    mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
 
-        OpenSkyProperties properties =
-                new OpenSkyProperties("test-client", "test-secret");
+    OpenSkyProperties properties = new OpenSkyProperties("test-client", "test-secret");
 
-        client = new OpenSkyClient(restClientBuilder, properties);
-    }
+    client = new OpenSkyClient(restClientBuilder, properties);
+  }
 
-    @Test
-    void getCurrentStatesShouldThrowOpenSkyApiExceptionWhenServerReturns500() {
-        mockServer.expect(requestTo(TOKEN_URL))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess(
-                        """
-                        {
-                            "access_token": "test-token",
-                            "expires_in": 1800,
-                            "token_type": "Bearer"
-                        }
-                        """,
-                        MediaType.APPLICATION_JSON
-                ));
+  private void expectTokenRequest() {
+    mockServer
+        .expect(requestTo(TOKEN_URL))
+        .andRespond(
+            withSuccess(
+                """
+                            {
+                                "access_token": "test-token",
+                                "expires_in": 1800,
+                                "token_type": "Bearer"
+                            }
+                            """,
+                MediaType.APPLICATION_JSON));
+  }
 
-        mockServer.expect(requestTo(STATES_URL))
-                .andExpect(method(HttpMethod.GET))
-                .andExpect(header(
-                        HttpHeaders.AUTHORIZATION,
-                        "Bearer test-token"
-                ))
-                .andRespond(withServerError());
+  private void expectStatesRequest() {
+    mockServer
+        .expect(requestTo(STATES_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer test-token"))
+        .andRespond(
+            withSuccess(
+                """
+                            {
+                                "time": 1790000000,
+                                "states": []
+                            }
+                            """,
+                MediaType.APPLICATION_JSON));
+  }
 
-        OpenSkyApiException exception = assertThrows(
-                OpenSkyApiException.class,
-                client::getCurrentStates
-        );
+  @Test
+  void getCurrentStatesShouldThrowOpenSkyApiExceptionWhenServerReturns500() {
+    expectTokenRequest();
 
-        assertInstanceOf(RestClientException.class, exception.getCause());
+    mockServer
+        .expect(requestTo(STATES_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer test-token"))
+        .andRespond(withServerError());
 
-        mockServer.verify();
-    }
+    OpenSkyApiException exception =
+        assertThrows(OpenSkyApiException.class, client::getCurrentStates);
 
-    @Test
-    void getCurrentStatesShouldThrowOpenSkyApiExceptionWhenTokenResponseIsInvalid() {
-        mockServer.expect(requestTo(TOKEN_URL))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess(
-                        """
-                        {
-                            "expires_in": 1800,
-                            "token_type": "Bearer"
-                        }
-                        """,
-                        MediaType.APPLICATION_JSON
-                ));
+    assertInstanceOf(RestClientException.class, exception.getCause());
 
-        assertThrows(
-                OpenSkyApiException.class,
-                client::getCurrentStates
-        );
+    mockServer.verify();
+  }
 
-        mockServer.verify();
-    }
+  @Test
+  void getCurrentStatesShouldThrowOpenSkyApiExceptionWhenTokenResponseIsInvalid() {
+    mockServer
+        .expect(requestTo(TOKEN_URL))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(
+            withSuccess(
+                """
+                            {
+                                "expires_in": 1800,
+                                "token_type": "Bearer"
+                            }
+                            """,
+                MediaType.APPLICATION_JSON));
 
-    @Test
-    void getCurrentStatesShouldThrowOpenSkyApiExceptionWhenResponseIsEmpty() {
-        mockServer.expect(requestTo(TOKEN_URL))
-                .andRespond(withSuccess(
-                        """
-                        {
-                            "access_token": "test-token",
-                            "expires_in": 1800,
-                            "token_type": "Bearer"
-                        }
-                        """,
-                        MediaType.APPLICATION_JSON
-                ));
+    assertThrows(OpenSkyApiException.class, client::getCurrentStates);
 
-        mockServer.expect(requestTo(STATES_URL))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
+    mockServer.verify();
+  }
 
-        assertThrows(
-                OpenSkyApiException.class,
-                client::getCurrentStates
-        );
+  @Test
+  void getCurrentStatesShouldThrowOpenSkyApiExceptionWhenResponseIsEmpty() {
+    expectTokenRequest();
 
-        mockServer.verify();
-    }
+    mockServer
+        .expect(requestTo(STATES_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
 
-    @Test
-    void getCurrentStatesShouldReturnResponseWhenApiCallSucceeds() {
-        mockServer.expect(requestTo(TOKEN_URL))
-                .andRespond(withSuccess(
-                        """
-                        {
-                            "access_token": "test-token",
-                            "expires_in": 1800,
-                            "token_type": "Bearer"
-                        }
-                        """,
-                        MediaType.APPLICATION_JSON
-                ));
+    assertThrows(OpenSkyApiException.class, client::getCurrentStates);
 
-        mockServer.expect(requestTo(STATES_URL))
-                .andExpect(method(HttpMethod.GET))
-                .andExpect(header(
-                        HttpHeaders.AUTHORIZATION,
-                        "Bearer test-token"
-                ))
-                .andRespond(withSuccess(
-                        """
-                        {
-                            "time": 1790000000,
-                            "states": []
-                        }
-                        """,
-                        MediaType.APPLICATION_JSON
-                ));
+    mockServer.verify();
+  }
 
-        OpenSkyStatesResponse response = client.getCurrentStates();
+  @Test
+  void getCurrentStatesShouldReturnResponseWhenApiCallSucceeds() {
+    expectTokenRequest();
+    expectStatesRequest();
 
-        assertNotNull(response);
-        assertEquals(1790000000L, response.time());
-        assertNotNull(response.states());
-        assertTrue(response.states().isEmpty());
+    OpenSkyStatesResponse response = client.getCurrentStates();
 
-        mockServer.verify();
-    }
+    assertNotNull(response);
+    assertEquals(1790000000L, response.time());
+    assertNotNull(response.states());
+    assertTrue(response.states().isEmpty());
+
+    mockServer.verify();
+  }
+
+  @Test
+  void getCurrentStatesShouldReuseAccessToken() {
+    expectTokenRequest();
+    expectStatesRequest();
+    expectStatesRequest();
+
+    client.getCurrentStates();
+    client.getCurrentStates();
+
+    mockServer.verify();
+  }
 }

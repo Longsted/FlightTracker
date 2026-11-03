@@ -5,8 +5,9 @@
 
 <module name="Checker">
     <module name="TreeWalker">
-        <module name="AvoidInlineConditionals"/>
         <module name="OneStatementPerLine"/>
         <module name="UnusedImports"/>
+        <module name="NeedBraces"/>
+        <module name="MissingOverride"/>
     </module>
 </module>

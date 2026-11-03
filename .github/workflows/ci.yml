@@ -28,7 +28,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build, test and generate coverage report
-        run: ./gradlew build jacocoTestReport
+        run: ./gradlew build spotlessCheck jacocoTestReport
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4
