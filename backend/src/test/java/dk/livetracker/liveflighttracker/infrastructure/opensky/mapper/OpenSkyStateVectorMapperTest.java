@@ -70,7 +70,7 @@ class OpenSkyStateVectorMapperTest {
         () -> assertNull(flight.heading()),
         () -> assertNull(flight.verticalRate()),
         () -> assertFalse(flight.onGround()),
-        () -> assertFalse(flight.hasPosition()));
+        () -> assertFalse(flight.hasValidPosition()));
   }
 
   @Test

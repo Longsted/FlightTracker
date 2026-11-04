@@ -2,7 +2,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'ol/ol.css'
 import './index.css'
-import { createFlightMap } from './map/FlightMap.js'
+import { createFlightMap } from './map/flightMap.js'
 
 document.querySelector('#app').innerHTML = `
   <div class="container-fluid" x-data="flightDashboard">
