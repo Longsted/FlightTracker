@@ -13,9 +13,8 @@ public class FlightService {
   }
 
   public List<Flight> getCurrentFlights() {
-      return flightDataProvider.getCurrentFlights()
-              .stream()
-              .filter(Flight::hasValidPosition)
-              .toList();
+    return flightDataProvider.getCurrentFlights().stream()
+        .filter(Flight::hasValidPosition)
+        .toList();
   }
 }

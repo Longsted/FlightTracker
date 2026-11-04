@@ -16,11 +16,13 @@ public record Flight(
     Double heading,
     Double verticalRate) {
   public boolean hasValidPosition() {
-      return longitude != null
-              && latitude != null
-              && Double.isFinite(longitude)
-              && Double.isFinite(latitude)
-              && longitude >= -180 && longitude <= 180
-              && latitude >= -90 && latitude <= 90;
+    return longitude != null
+        && latitude != null
+        && Double.isFinite(longitude)
+        && Double.isFinite(latitude)
+        && longitude >= -180
+        && longitude <= 180
+        && latitude >= -90
+        && latitude <= 90;
   }
 }
