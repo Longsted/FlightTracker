@@ -43,3 +43,6 @@ spotless{
 		removeUnusedImports()
 	}
 }
+tasks.named('check'){
+	dependsOn('spotlessCheck')
+}
