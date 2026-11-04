@@ -9,14 +9,8 @@ import Point from 'ol/geom/Point'
 import { fromLonLat } from 'ol/proj'
 import { Circle, Fill, Stroke, Style } from 'ol/style'
 
-const sampleFlights = [
-  { callsign: 'SAS123', longitude: 10.7522, latitude: 56.2639 },
-  { callsign: 'DLH456', longitude: 12.5683, latitude: 55.6761 },
-  { callsign: 'KLM789', longitude: 9.9217, latitude: 57.0488 },
-]
-
-export function createFlightMap() {
-  const features = sampleFlights.map((flight) => {
+export function createFlightMap(flights) {
+  const features = flights.map((flight) => {
     const feature = new Feature({
       geometry: new Point(
         fromLonLat([flight.longitude, flight.latitude]),
