@@ -20,7 +20,7 @@ document.querySelector('#app').innerHTML = `
               <div
                 id="flight-map"
                 class="flight-map"
-                aria-label="Map showing sample flight positions"
+                aria-label="Map showing current flight positions"
               ></div>
             </div>
           </div>
@@ -51,19 +51,35 @@ document.querySelector('#app').innerHTML = `
 `
 
 Alpine.data('flightDashboard', () => ({
-  statusMessage: 'Viser eksempelpositioner',
+  statusMessage: 'retrieving flight data',
   selectedFlight: null,
 
-  init() {
+ async init() {
     window.addEventListener('asset-clicked', (event) => {
       this.selectedFlight = event.detail
     })
+     try{
+        const response = await fetch('/api/flights')
+
+         if(!response.ok){
+             throw new Error(`HTTP error: ${response.status}`)
+         }
+
+         const flights = await response.json()
+
+         createFlightMap(flights)
+         if (flights.length === 0) {
+             this.statusMessage = 'No flights currently available'
+         } else {
+             this.statusMessage = `Showing ${flights.length} flights`
+         }
+     }catch(error)
+      {
+         console.error(`Failed to retrieve flights`,error)
+          this.statusMessage = 'Could not retrieve flight data'
+     }
   },
 }))
 
 window.Alpine = Alpine
 Alpine.start()
-
-requestAnimationFrame(() => {
-  createFlightMap()
-})
