@@ -1,4 +1,3 @@
-
 package dk.livetracker.liveflighttracker.presentation.controller;
 
 import static org.mockito.Mockito.*;
@@ -23,14 +22,11 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import(FlightService.class)
 class FlightControllerIntegrationTest {
 
-  @Autowired
-  private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-  @MockitoBean
-  private FlightSnapshotStore snapshotStore;
+  @MockitoBean private FlightSnapshotStore snapshotStore;
 
-  @MockitoBean
-  private FlightDataProvider flightDataProvider;
+  @MockitoBean private FlightDataProvider flightDataProvider;
 
   @Test
   void getFlightsReturnsEmptyList() throws Exception {
@@ -38,9 +34,7 @@ class FlightControllerIntegrationTest {
     when(snapshotStore.getSnapshot()).thenReturn(List.of());
 
     // When & Then
-    mockMvc.perform(get("/api/flights"))
-            .andExpect(status().isOk())
-            .andExpect(content().json("[]"));
+    mockMvc.perform(get("/api/flights")).andExpect(status().isOk()).andExpect(content().json("[]"));
   }
 
   @Test
@@ -48,13 +42,16 @@ class FlightControllerIntegrationTest {
     // Given
     Flight flight = createFlight();
 
-    when(snapshotStore.getSnapshot())
-            .thenReturn(List.of(flight, flight));
+    when(snapshotStore.getSnapshot()).thenReturn(List.of(flight, flight));
 
     // When & Then
-    mockMvc.perform(get("/api/flights"))
-            .andExpect(status().isOk())
-            .andExpect(content().json("""
+    mockMvc
+        .perform(get("/api/flights"))
+        .andExpect(status().isOk())
+        .andExpect(
+            content()
+                .json(
+                    """
                     [{
                         "icao24": "abc123",
                         "callsign": "SAS123",
@@ -77,14 +74,16 @@ class FlightControllerIntegrationTest {
     // Given
     Flight flight = createFlight();
 
-    when(snapshotStore.getSnapshot())
-            .thenReturn(List.of(flight));
+    when(snapshotStore.getSnapshot()).thenReturn(List.of(flight));
 
     // When & Then
-    mockMvc.perform(get("/api/flights/search")
-                    .param("query", "SAS"))
-            .andExpect(status().isOk())
-            .andExpect(content().json("""
+    mockMvc
+        .perform(get("/api/flights/search").param("query", "SAS"))
+        .andExpect(status().isOk())
+        .andExpect(
+            content()
+                .json(
+                    """
                     [{
                         "icao24": "abc123",
                         "callsign": "SAS123",
@@ -98,30 +97,28 @@ class FlightControllerIntegrationTest {
     // Given
     Flight flight = createFlight();
 
-    when(snapshotStore.getSnapshot())
-            .thenReturn(List.of(flight));
+    when(snapshotStore.getSnapshot()).thenReturn(List.of(flight));
 
     // When & Then
-    mockMvc.perform(get("/api/flights/search")
-                    .param("query", "NOTFOUND"))
-            .andExpect(status().isOk())
-            .andExpect(content().json("[]"));
+    mockMvc
+        .perform(get("/api/flights/search").param("query", "NOTFOUND"))
+        .andExpect(status().isOk())
+        .andExpect(content().json("[]"));
   }
 
   private Flight createFlight() {
     return new Flight(
-            "abc123",
-            "SAS123",
-            "Denmark",
-            Instant.ofEpochSecond(1730000000L),
-            Instant.ofEpochSecond(1730000000L),
-            10.7522,
-            56.2639,
-            10000.0,
-            false,
-            250.0,
-            180.0,
-            0.0
-    );
+        "abc123",
+        "SAS123",
+        "Denmark",
+        Instant.ofEpochSecond(1730000000L),
+        Instant.ofEpochSecond(1730000000L),
+        10.7522,
+        56.2639,
+        10000.0,
+        false,
+        250.0,
+        180.0,
+        0.0);
   }
 }

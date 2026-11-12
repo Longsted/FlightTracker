@@ -24,7 +24,7 @@ public class FlightController {
   }
 
   @GetMapping("/search")
-  public List<Flight> searchFlights(@RequestParam String query){
+  public List<Flight> searchFlights(@RequestParam String query) {
     return flightService.searchFlights(query);
   }
 }
