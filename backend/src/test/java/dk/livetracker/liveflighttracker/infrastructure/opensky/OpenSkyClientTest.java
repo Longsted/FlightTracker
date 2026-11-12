@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
+import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProviderException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
-import dk.livetracker.liveflighttracker.infrastructure.opensky.exception.OpenSkyApiException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -77,8 +77,8 @@ class OpenSkyClientTest {
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer test-token"))
         .andRespond(withServerError());
 
-    OpenSkyApiException exception =
-        assertThrows(OpenSkyApiException.class, client::getCurrentStates);
+    FlightDataProviderException exception =
+        assertThrows(FlightDataProviderException.class, client::getCurrentStates);
 
     assertInstanceOf(RestClientException.class, exception.getCause());
 
@@ -100,7 +100,7 @@ class OpenSkyClientTest {
                             """,
                 MediaType.APPLICATION_JSON));
 
-    assertThrows(OpenSkyApiException.class, client::getCurrentStates);
+    assertThrows(FlightDataProviderException.class, client::getCurrentStates);
 
     mockServer.verify();
   }
@@ -114,7 +114,7 @@ class OpenSkyClientTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
 
-    assertThrows(OpenSkyApiException.class, client::getCurrentStates);
+    assertThrows(FlightDataProviderException.class, client::getCurrentStates);
 
     mockServer.verify();
   }

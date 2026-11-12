@@ -1,13 +1,14 @@
 package dk.livetracker.liveflighttracker.infrastructure.opensky;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 import dk.livetracker.liveflighttracker.domain.Flight;
+import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProviderException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.decoder.OpenSkyStateVectorDecoder;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStateVector;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
-import dk.livetracker.liveflighttracker.infrastructure.opensky.exception.OpenSkyApiException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.mapper.OpenSkyStateVectorMapper;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public class OpenSkyFlightDataProviderTest {
 
     when(openSkyStateVectorDecoderMock.decode(stateA)).thenReturn(vectorA);
     when(openSkyStateVectorDecoderMock.decode(stateB))
-        .thenThrow(new OpenSkyApiException("Invalid state vector"));
+        .thenThrow(new FlightDataProviderException("Invalid state vector"));
     when(openSkyStateVectorDecoderMock.decode(stateC)).thenReturn(vectorC);
 
     when(openSkyStateVectorMapperMock.toFlight(vectorA)).thenReturn(flightA);
@@ -141,9 +142,9 @@ public class OpenSkyFlightDataProviderTest {
     when(openSkyClientMock.getCurrentStates()).thenReturn(response);
 
     when(openSkyStateVectorDecoderMock.decode(stateA))
-        .thenThrow(new OpenSkyApiException("Invalid state vector"));
+        .thenThrow(new FlightDataProviderException("Invalid state vector"));
     when(openSkyStateVectorDecoderMock.decode(stateB))
-        .thenThrow(new OpenSkyApiException("Invalid state vector"));
+        .thenThrow(new FlightDataProviderException("Invalid state vector"));
 
     // when
     List<Flight> result = provider.getCurrentFlights();
@@ -185,7 +186,7 @@ public class OpenSkyFlightDataProviderTest {
 
     when(openSkyClientMock.getCurrentStates()).thenReturn(response);
     when(openSkyStateVectorDecoderMock.decode(null))
-        .thenThrow(new OpenSkyApiException("Invalid state vector"));
+        .thenThrow(new FlightDataProviderException("Invalid state vector"));
     when(openSkyStateVectorDecoderMock.decode(validState)).thenReturn(vector);
     when(openSkyStateVectorMapperMock.toFlight(vector)).thenReturn(flight);
 
@@ -194,5 +195,17 @@ public class OpenSkyFlightDataProviderTest {
 
     // then
     assertEquals(List.of(flight), result);
+  }
+
+  @Test
+  void getCurrentFlights_propagatesClientException() {
+    doThrow(new FlightDataProviderException("OpenSky unavailable"))
+        .when(openSkyClientMock)
+        .getCurrentStates();
+
+    assertThrows(FlightDataProviderException.class, () -> provider.getCurrentFlights());
+
+    verifyNoInteractions(openSkyStateVectorDecoderMock);
+    verifyNoInteractions(openSkyStateVectorMapperMock);
   }
 }

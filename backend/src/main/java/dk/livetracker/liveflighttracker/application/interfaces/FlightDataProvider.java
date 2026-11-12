@@ -3,12 +3,12 @@ package dk.livetracker.liveflighttracker.application.interfaces;
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.util.List;
 
-/** Provides access to current flight data. */
+/** Provides access to flight data from an external data source. */
 public interface FlightDataProvider {
   /**
-   * Retrieves all currently available flights.
+   * Retrieves flight data from the configured data source.
    *
-   * @return a list of currently available flights
+   * @return a list of successfully retrieved and mapped flights
    */
   List<Flight> getCurrentFlights();
 }

@@ -2,8 +2,8 @@ package dk.livetracker.liveflighttracker.infrastructure.opensky.decoder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProviderException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStateVector;
-import dk.livetracker.liveflighttracker.infrastructure.opensky.exception.OpenSkyApiException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -136,7 +136,7 @@ class OpenSkyStateVectorDecoderTest {
 
   @Test
   void shouldThrowExceptionWhenStateIsNull() {
-    assertThrows(OpenSkyApiException.class, () -> decoder.decode(null));
+    assertThrows(FlightDataProviderException.class, () -> decoder.decode(null));
   }
 
   @Test
@@ -155,7 +155,7 @@ class OpenSkyStateVectorDecoderTest {
             250.0,
             180.0);
 
-    assertThrows(OpenSkyApiException.class, () -> decoder.decode(state));
+    assertThrows(FlightDataProviderException.class, () -> decoder.decode(state));
   }
 
   @Test
@@ -175,6 +175,6 @@ class OpenSkyStateVectorDecoderTest {
             180.0,
             0.0);
 
-    assertThrows(OpenSkyApiException.class, () -> decoder.decode(state));
+    assertThrows(FlightDataProviderException.class, () -> decoder.decode(state));
   }
 }
