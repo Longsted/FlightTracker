@@ -59,13 +59,13 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Lint frontend
         run: npm run lint
 
       - name: Run frontend tests
-        run: npm test
+        run: npx playwright test
 
       - name: Build frontend
         run: npm run build

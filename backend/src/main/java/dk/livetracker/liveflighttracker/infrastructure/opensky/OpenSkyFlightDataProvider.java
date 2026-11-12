@@ -2,10 +2,10 @@ package dk.livetracker.liveflighttracker.infrastructure.opensky;
 
 import dk.livetracker.liveflighttracker.application.interfaces.FlightDataProvider;
 import dk.livetracker.liveflighttracker.domain.Flight;
+import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProviderException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.decoder.OpenSkyStateVectorDecoder;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStateVector;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
-import dk.livetracker.liveflighttracker.infrastructure.opensky.exception.OpenSkyApiException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.mapper.OpenSkyStateVectorMapper;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +42,7 @@ public class OpenSkyFlightDataProvider implements FlightDataProvider {
       OpenSkyStateVector openSkyStateVector;
       try {
         openSkyStateVector = decoder.decode(state);
-      } catch (OpenSkyApiException e) {
+      } catch (FlightDataProviderException e) {
         continue;
       }
       Flight flight = mapper.toFlight(openSkyStateVector);

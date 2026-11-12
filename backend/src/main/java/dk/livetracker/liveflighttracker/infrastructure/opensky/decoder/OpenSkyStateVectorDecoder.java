@@ -1,7 +1,7 @@
 package dk.livetracker.liveflighttracker.infrastructure.opensky.decoder;
 
+import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProviderException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStateVector;
-import dk.livetracker.liveflighttracker.infrastructure.opensky.exception.OpenSkyApiException;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +11,7 @@ public class OpenSkyStateVectorDecoder {
   public OpenSkyStateVector decode(List<Object> state) {
 
     if (state == null || state.size() < 12) {
-      throw new OpenSkyApiException("Invalid OpenSky state vector");
+      throw new FlightDataProviderException("Invalid OpenSky state vector");
     }
     String icao24 = decodeValue(state.get(0), String.class);
     String callsign = decodeValue(state.get(1), String.class);
@@ -61,7 +61,7 @@ public class OpenSkyStateVectorDecoder {
 
       return type.cast(value);
     } catch (ClassCastException e) {
-      throw new OpenSkyApiException("Invalid OpenSky state vector");
+      throw new FlightDataProviderException("Invalid OpenSky state vector");
     }
   }
 }

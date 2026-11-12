@@ -1,0 +1,29 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" width="32"
+     height="32" viewBox="0 0 64 64">
+    <path
+            d="M32 3
+       C29 3 27 6 27 10
+       L25 27
+       L7 39
+       L7 44
+       L26 39
+       L27 53
+       L20 58
+       L20 61
+       L32 58
+       L44 61
+       L44 58
+       L37 53
+       L38 39
+       L57 44
+       L57 39
+       L39 27
+       L37 10
+       C37 6 35 3 32 3 Z"
+            fill="#0d6efd"
+            stroke="#ffffff"
+            stroke-width="1.5"
+
+    />
+</svg>

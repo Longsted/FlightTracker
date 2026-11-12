@@ -1,8 +1,8 @@
 package dk.livetracker.liveflighttracker.infrastructure.opensky;
 
+import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProviderException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyTokenResponse;
-import dk.livetracker.liveflighttracker.infrastructure.opensky.exception.OpenSkyApiException;
 import java.time.Instant;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -47,14 +47,14 @@ public class OpenSkyClient {
               .body(OpenSkyTokenResponse.class);
 
     } catch (RestClientException e) {
-      throw new OpenSkyApiException("Failed to retrieve access token from OpenSky.", e);
+      throw new FlightDataProviderException("Failed to retrieve access token from OpenSky.", e);
     }
 
     if (response == null
         || response.accessToken() == null
         || response.accessToken().isBlank()
         || response.expiresIn() <= 0) {
-      throw new OpenSkyApiException("OpenSky returned an invalid token response.");
+      throw new FlightDataProviderException("OpenSky returned an invalid token response.");
     }
 
     return response;
@@ -87,10 +87,10 @@ public class OpenSkyClient {
               .body(OpenSkyStatesResponse.class);
 
     } catch (RestClientException e) {
-      throw new OpenSkyApiException("Failed to retrieve flight states from OpenSky.", e);
+      throw new FlightDataProviderException("Failed to retrieve flight states from OpenSky.", e);
     }
     if (response == null) {
-      throw new OpenSkyApiException("OpenSky returned an empty response.");
+      throw new FlightDataProviderException("OpenSky returned an empty response.");
     }
     return response;
   }

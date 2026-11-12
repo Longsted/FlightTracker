@@ -2,7 +2,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'ol/ol.css'
 import './index.css'
-import { createFlightMap } from './map/flightMap.js'
+import {createFlightMap, updateFlights} from './map/flightMap.js'
 
 document.querySelector('#app').innerHTML = `
   <div class="container-fluid" x-data="flightDashboard">
@@ -51,34 +51,56 @@ document.querySelector('#app').innerHTML = `
 `
 
 Alpine.data('flightDashboard', () => ({
-  statusMessage: 'retrieving flight data',
-  selectedFlight: null,
+    statusMessage: 'Retrieving flight data',
+    selectedFlight: null,
+    mapInitialized: false,
 
- async init() {
-    window.addEventListener('asset-clicked', (event) => {
-      this.selectedFlight = event.detail
-    })
-     try{
-        const response = await fetch('/api/flights')
+    async init() {
+        window.addEventListener('asset-clicked', (event) => {
+            this.selectedFlight = event.detail
+        })
+        await this.refreshFlights()
 
-         if(!response.ok){
-             throw new Error(`HTTP error: ${response.status}`)
-         }
+        //polling
+        setInterval(() => {
+            this.refreshFlights()
+        }, 120000)
+    },
+    async refreshFlights() {
+        try {
+            const response = await fetch('/api/flights')
 
-         const flights = await response.json()
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`)
+            }
 
-         createFlightMap(flights)
-         if (flights.length === 0) {
-             this.statusMessage = 'No flights currently available'
-         } else {
-             this.statusMessage = `Showing ${flights.length} flights`
-         }
-     }catch(error)
-      {
-         console.error(`Failed to retrieve flights`,error)
-          this.statusMessage = 'Could not retrieve flight data'
-     }
-  },
+            const flights = await response.json()
+
+            if (!this.mapInitialized) {
+                createFlightMap(flights)
+                this.mapInitialized = true
+            } else {
+                updateFlights(flights)
+            }
+
+            if(this.selectedFlight){
+                const updatedFlight = flights.find(
+                    flight => flight.icao24 === this.selectedFlight.icao24
+                )
+                this.selectedFlight = updatedFlight ?? null
+            }
+
+            if (flights.length === 0) {
+                this.statusMessage = 'No flights currently available'
+            } else {
+                this.statusMessage = `Showing ${flights.length} flights`
+            }
+        } catch (error) {
+            console.error(`Failed to retrieve flights`, error)
+            this.statusMessage = 'Could not retrieve flight data'
+        }
+
+    }
 }))
 
 window.Alpine = Alpine
