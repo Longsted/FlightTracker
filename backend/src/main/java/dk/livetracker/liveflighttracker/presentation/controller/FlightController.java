@@ -5,6 +5,7 @@ import dk.livetracker.liveflighttracker.domain.Flight;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,5 +21,10 @@ public class FlightController {
   @GetMapping
   public List<Flight> getFlights() {
     return flightService.getCurrentFlights();
+  }
+
+  @GetMapping("/search")
+  public List<Flight> searchFlights(@RequestParam String query){
+    return flightService.searchFlights(query);
   }
 }
