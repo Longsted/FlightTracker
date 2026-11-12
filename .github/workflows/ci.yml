@@ -61,6 +61,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium
 
+      - name: Check frontend formatting
+        run: npm run format:check
+
       - name: Lint frontend
         run: npm run lint
 

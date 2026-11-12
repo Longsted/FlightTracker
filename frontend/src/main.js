@@ -1,10 +1,10 @@
-﻿import Alpine from 'alpinejs'
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'ol/ol.css'
-import './index.css'
-import {createFlightMap, updateFlights} from './map/flightMap.js'
+﻿import Alpine from "alpinejs";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "ol/ol.css";
+import "./index.css";
+import flightDashboard from "./dashboard/flightDashboard.js";
 
-document.querySelector('#app').innerHTML = `
+document.querySelector("#app").innerHTML = `
   <div class="container-fluid" x-data="flightDashboard">
     <header class="py-3 border-bottom">
       <h1 class="h3 mb-0">Live Flight Tracker</h1>
@@ -135,62 +135,9 @@ document.querySelector('#app').innerHTML = `
       </div>
     </main>
   </div>
-`
+`;
 
-Alpine.data('flightDashboard', () => ({
-    statusMessage: 'Retrieving flight data',
-    selectedFlight: null,
-    mapInitialized: false,
-    flightPanelOpen: false,
+Alpine.data("flightDashboard", flightDashboard);
 
-    async init() {
-        window.addEventListener('asset-clicked', (event) => {
-            this.selectedFlight = event.detail
-            this.flightPanelOpen = true
-        })
-        await this.refreshFlights()
-
-        //polling
-        setInterval(() => {
-            this.refreshFlights()
-        }, 120000)
-    },
-    async refreshFlights() {
-        try {
-            const response = await fetch('/api/flights')
-
-            if (!response.ok) {
-                throw new Error(`HTTP error: ${response.status}`)
-            }
-
-            const flights = await response.json()
-
-            if (!this.mapInitialized) {
-                createFlightMap(flights)
-                this.mapInitialized = true
-            } else {
-                updateFlights(flights)
-            }
-
-            if(this.selectedFlight){
-                const updatedFlight = flights.find(
-                    flight => flight.icao24 === this.selectedFlight.icao24
-                )
-                this.selectedFlight = updatedFlight ?? null
-            }
-
-            if (flights.length === 0) {
-                this.statusMessage = 'No flights currently available'
-            } else {
-                this.statusMessage = `Showing ${flights.length} flights`
-            }
-        } catch (error) {
-            console.error(`Failed to retrieve flights`, error)
-            this.statusMessage = 'Could not retrieve flight data'
-        }
-
-    }
-}))
-
-window.Alpine = Alpine
-Alpine.start()
+window.Alpine = Alpine;
+Alpine.start();

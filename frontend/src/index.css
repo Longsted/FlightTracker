@@ -20,116 +20,116 @@ body {
   display: none !important;
 }
 .map-container {
-    position: relative;
+  position: relative;
 }
 
 .altitude-legend {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    z-index: 1000;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
 
-    width: 260px;
-    box-sizing: border-box;
-    padding: 12px;
+  width: 260px;
+  box-sizing: border-box;
+  padding: 12px;
 
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
-    font-size: 12px;
+  font-size: 12px;
 }
 
 .altitude-legend h3 {
-    font-size: 14px;
-    margin-bottom: 10px;
+  font-size: 14px;
+  margin-bottom: 10px;
 }
 
 .altitude-gradient {
-    height: 12px;
-    border-radius: 6px;
-    background: linear-gradient(
-            to right,
-            #22c55e 0%,
-            #eab308 25%,
-            #f97316 50%,
-            #ef4444 100%
-    );
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    to right,
+    #22c55e 0%,
+    #eab308 25%,
+    #f97316 50%,
+    #ef4444 100%
+  );
 }
 
 .altitude-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 5px;
-    font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 10px;
 }
 
 .altitude-special {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
 }
 
 .altitude-special span {
-    display: flex;
-    align-items: center;
-    gap: 7px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .legend-color {
-    display:block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
 .legend-color.ground {
-    background: blue;
+  background: blue;
 }
 
 .legend-color.unknown {
-    background: grey;
+  background: grey;
 }
 
 .flight-panel {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    width: min(320px, 85%);
-    overflow-y: auto;
-    background: white;
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  width: min(320px, 85%);
+  overflow-y: auto;
+  background: white;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
 }
 
 .flight-panel-toggle {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-    z-index: 1001;
-    transition: right 0.2s ease;
-    width: 28px;
-    height: 56px;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 1001;
+  transition: right 0.2s ease;
+  width: 28px;
+  height: 56px;
 
-    border: none;
-    border-radius: 8px 0 0 8px;
+  border: none;
+  border-radius: 8px 0 0 8px;
 
-    background: white;
-    box-shadow: -2px 0 6px rgba(0, 0, 0, 0.2);
+  background: white;
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.2);
 
-    font-size: 24px;
-    cursor: pointer;
+  font-size: 24px;
+  cursor: pointer;
 }
 .flight-panel-toggle.panel-open {
-    right: min(320px, 85%);
+  right: min(320px, 85%);
 }
 .ol-attribution.custom-attribution {
-    position: absolute;
-    top: 25px;
-    left: 5px;
-    right: auto;
-    bottom: auto;
+  position: absolute;
+  top: 25px;
+  left: 5px;
+  right: auto;
+  bottom: auto;
 }
