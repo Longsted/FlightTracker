@@ -6,6 +6,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
+import dk.livetracker.liveflighttracker.application.filter.FlightFiltering;
 import dk.livetracker.liveflighttracker.application.interfaces.FlightDataProvider;
 import dk.livetracker.liveflighttracker.application.interfaces.FlightSnapshotStore;
 import dk.livetracker.liveflighttracker.domain.Flight;
@@ -19,12 +21,14 @@ class FlightServiceTest {
   private FlightDataProvider provider;
   private FlightSnapshotStore snapshotStore;
   private FlightService service;
+  private FlightFiltering flightFiltering;
 
   @BeforeEach
   void setUp() {
     provider = mock(FlightDataProvider.class);
     snapshotStore = mock(FlightSnapshotStore.class);
-    service = new FlightService(provider, snapshotStore);
+    flightFiltering = mock(FlightFiltering.class);
+    service = new FlightService(provider, snapshotStore, flightFiltering);
   }
 
   @Test
@@ -154,6 +158,32 @@ class FlightServiceTest {
     assertTrue(service.searchFlights("").isEmpty());
     assertTrue(service.searchFlights("   ").isEmpty());
     assertTrue(service.searchFlights(null).isEmpty());
+  }
+  @Test
+  void filterFlightsPassesValidFlightsToFlightFiltering() {
+    // Given
+    Flight validFlight = createFlight(10.0, 56.0);
+    Flight invalidFlight = createFlight(181.0, 56.0);
+
+    FlightFilter filter = new FlightFilter(
+            "Denmark", null, null, null, null,
+            null, null, null, null, null
+    );
+
+    List<Flight> snapshot = List.of(validFlight, invalidFlight);
+    List<Flight> expectedFlights = List.of(validFlight);
+
+    when(snapshotStore.getSnapshot()).thenReturn(snapshot);
+    when(flightFiltering.filter(expectedFlights, filter))
+            .thenReturn(expectedFlights);
+
+    // When
+    List<Flight> result = service.filterFlights(filter);
+
+    // Then
+    assertEquals(expectedFlights, result);
+    verify(snapshotStore).getSnapshot();
+    verify(flightFiltering).filter(expectedFlights, filter);
   }
 
   private Flight createFlight(Double longitude, Double latitude) {
