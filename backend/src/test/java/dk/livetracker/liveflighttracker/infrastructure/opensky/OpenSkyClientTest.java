@@ -42,12 +42,12 @@ class OpenSkyClientTest {
         .andRespond(
             withSuccess(
                 """
-                            {
-                                "access_token": "test-token",
-                                "expires_in": 1800,
-                                "token_type": "Bearer"
-                            }
-                            """,
+                {
+                    "access_token": "test-token",
+                    "expires_in": 1800,
+                    "token_type": "Bearer"
+                }
+                """,
                 MediaType.APPLICATION_JSON));
   }
 
@@ -59,11 +59,11 @@ class OpenSkyClientTest {
         .andRespond(
             withSuccess(
                 """
-                            {
-                                "time": 1790000000,
-                                "states": []
-                            }
-                            """,
+                {
+                    "time": 1790000000,
+                    "states": []
+                }
+                """,
                 MediaType.APPLICATION_JSON));
   }
 
@@ -93,11 +93,11 @@ class OpenSkyClientTest {
         .andRespond(
             withSuccess(
                 """
-                            {
-                                "expires_in": 1800,
-                                "token_type": "Bearer"
-                            }
-                            """,
+                {
+                    "expires_in": 1800,
+                    "token_type": "Bearer"
+                }
+                """,
                 MediaType.APPLICATION_JSON));
 
     assertThrows(FlightDataProviderException.class, client::getCurrentStates);
