@@ -1,6 +1,6 @@
 import * as flightMap from "../map/flightMap.js";
 import * as flightApi from "./flightApi.js";
-import FlightDashboardService from "./FlightDashboardService.js";
+import FlightDashboardService from "./flightDashboardService.js";
 
 export default () => {
   const dashboardService = new FlightDashboardService(flightApi, flightMap);
