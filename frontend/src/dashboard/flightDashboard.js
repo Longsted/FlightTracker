@@ -1,55 +1,94 @@
-import { createFlightMap, updateFlights } from "../map/flightMap.js";
+import * as flightMap from "../map/flightMap.js";
+import * as flightApi from "./flightApi.js";
+import FlightDashboardService from "./FlightDashboardService.js";
 
-export default () => ({
-  statusMessage: "Retrieving flight data",
-  selectedFlight: null,
-  mapInitialized: false,
-  flightPanelOpen: false,
+export default () => {
+  const dashboardService = new FlightDashboardService(flightApi, flightMap);
 
-  async init() {
-    window.addEventListener("asset-clicked", (event) => {
-      this.selectedFlight = event.detail;
-      this.flightPanelOpen = true;
-    });
-    await this.refreshFlights();
+  return {
+    statusMessage: "Retrieving flight data",
+    selectedFlight: null,
+    mapInitialized: false,
+    flightPanelOpen: true,
 
-    //polling
-    setInterval(() => {
-      this.refreshFlights();
-    }, 120000);
-  },
-  async refreshFlights() {
-    try {
-      const response = await fetch("/api/flights");
+    // Side panel visibility
+    leftPanelOpen: true,
+    rightPanelOpen: true,
 
-      if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
-      }
+    // Flight data and search
+    flights: [],
+    searchQuery: "",
+    searchResults: [],
+    searchPerformed: false,
 
-      const flights = await response.json();
+    get displayedFlights() {
+      return this.searchPerformed ? this.searchResults : this.flights;
+    },
 
-      if (!this.mapInitialized) {
-        createFlightMap(flights);
-        this.mapInitialized = true;
-      } else {
-        updateFlights(flights);
-      }
+    async init() {
+      window.addEventListener("asset-clicked", (event) => {
+        this.selectedFlight = event.detail;
+        this.flightPanelOpen = true;
+      });
 
-      if (this.selectedFlight) {
-        const updatedFlight = flights.find(
-          (flight) => flight.icao24 === this.selectedFlight.icao24,
+      await this.refreshFlights();
+
+      setInterval(() => {
+        this.refreshFlights();
+      }, 120000);
+    },
+
+    async refreshFlights() {
+      try {
+        const result = await dashboardService.refreshFlights(
+          this.selectedFlight,
+          this.mapInitialized,
         );
-        this.selectedFlight = updatedFlight ?? null;
+
+        this.flights = result.flights;
+        this.selectedFlight = result.selectedFlight;
+        this.mapInitialized = result.mapInitialized;
+        this.statusMessage = result.statusMessage;
+      } catch (error) {
+        console.error("Failed to retrieve flights", error);
+        this.statusMessage = "Could not retrieve flight data";
+      }
+    },
+
+    async searchFlights() {
+      const query = this.searchQuery.trim();
+
+      if (!query) {
+        this.clearSearch();
+        return;
       }
 
-      if (flights.length === 0) {
-        this.statusMessage = "No flights currently available";
-      } else {
-        this.statusMessage = `Showing ${flights.length} flights`;
+      try {
+        this.searchResults = await dashboardService.searchFlights(query);
+
+        this.searchPerformed = true;
+      } catch (error) {
+        console.error("Failed to search flights", error);
       }
-    } catch (error) {
-      console.error(`Failed to retrieve flights`, error);
-      this.statusMessage = "Could not retrieve flight data";
-    }
-  },
-});
+    },
+
+    clearSearch() {
+      this.searchQuery = "";
+      this.searchResults = [];
+      this.searchPerformed = false;
+
+      dashboardService.clearSearch();
+    },
+
+    selectFlight(flight) {
+      this.selectedFlight = flight;
+      this.flightPanelOpen = true;
+
+      dashboardService.selectFlight(flight);
+    },
+
+    clearSelectedFlight() {
+      this.selectedFlight = null;
+    },
+  };
+};

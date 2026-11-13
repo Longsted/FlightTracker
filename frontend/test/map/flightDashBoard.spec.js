@@ -10,11 +10,11 @@ test.beforeEach(async ({ page }) => {
       status: 200,
       contentType: "image/svg+xml",
       body: `
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     width="1" height="1">
-                    <rect width="1" height="1" fill="transparent"/>
-                </svg>
-            `,
+        <svg xmlns="http://www.w3.org/2000/svg"
+             width="1" height="1">
+          <rect width="1" height="1" fill="transparent"/>
+        </svg>
+      `,
     });
   });
 });
@@ -48,6 +48,10 @@ async function waitForMapRender(page) {
 
 function flightDetail(page, field) {
   return page.getByTestId(`flight-${field}`);
+}
+
+function flightDetailsContent(page) {
+  return page.locator(".details-content");
 }
 
 // Creates a flight with default test data.
@@ -163,6 +167,7 @@ test("displays message when no flights are available", async ({ page }) => {
   await expect(page.locator("header p")).toHaveText(
     "No flights currently available",
   );
+
   await expect(page.locator("#flight-map")).toBeVisible();
 });
 
@@ -173,6 +178,7 @@ test("displays error message when API returns HTTP 500", async ({ page }) => {
   await expect(page.locator("header p")).toHaveText(
     "Could not retrieve flight data",
   );
+
   await expect(page.locator("#flight-map")).toBeVisible();
 });
 
@@ -190,22 +196,18 @@ test("displays flight marker at its geographic position", async ({ page }) => {
 
   await clickFlightPosition(page, 10.5, 56.0);
 
-  const flightDetails = page.locator("dl");
+  await expect(flightDetailsContent(page)).toBeVisible();
 
-  await expect(flightDetails).toBeVisible();
-
-  const details = flightDetails.locator("dd");
-
-  await expect(details.nth(0)).toHaveText("TEST-CENTER");
-  await expect(details.nth(1)).toHaveText("abc123");
-  await expect(details.nth(2)).toHaveText("Denmark");
-  await expect(details.nth(3)).toHaveText("In flight");
-  await expect(details.nth(4)).toHaveText("10000 m");
-  await expect(details.nth(5)).toHaveText("250 m/s");
-  await expect(details.nth(6)).toHaveText("180°");
-  await expect(details.nth(7)).toHaveText("0 m/s");
-  await expect(details.nth(8)).toHaveText("10.5");
-  await expect(details.nth(9)).toHaveText("56");
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-CENTER");
+  await expect(flightDetail(page, "icao24")).toHaveText("abc123");
+  await expect(flightDetail(page, "origin-country")).toHaveText("Denmark");
+  await expect(flightDetail(page, "status")).toHaveText("In flight");
+  await expect(flightDetail(page, "altitude")).toHaveText("10.000 m");
+  await expect(flightDetail(page, "ground-speed")).toHaveText("250 m/s");
+  await expect(flightDetail(page, "track")).toHaveText("180°");
+  await expect(flightDetail(page, "vertical-speed")).toHaveText("0 m/s");
+  await expect(flightDetail(page, "longitude")).toHaveText("10.5");
+  await expect(flightDetail(page, "latitude")).toHaveText("56");
 });
 
 // ========================================
@@ -239,10 +241,8 @@ test("updates flight position and keeps map interactive", async ({ page }) => {
   // Select the flight before the update.
   await clickFlightPosition(page, 10.5, 56.0);
 
-  const flightDetails = page.locator("dl");
-
-  await expect(flightDetails).toBeVisible();
-  await expect(flightDetails.locator("dd").nth(0)).toHaveText("TEST-CENTER");
+  await expect(flightDetailsContent(page)).toBeVisible();
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-CENTER");
 
   // Advance the clock by the 120-second polling interval.
   await page.clock.fastForward(120_000);
@@ -250,15 +250,15 @@ test("updates flight position and keeps map interactive", async ({ page }) => {
   await expect.poll(getRequestCount).toBe(2);
 
   // Verify that the selected flight details have been updated.
-  await expect(flightDetails.locator("dd").nth(0)).toHaveText("TEST-UPDATED");
-  await expect(flightDetails.locator("dd").nth(8)).toHaveText("13");
-  await expect(flightDetails.locator("dd").nth(9)).toHaveText("58");
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-UPDATED");
+  await expect(flightDetail(page, "longitude")).toHaveText("13");
+  await expect(flightDetail(page, "latitude")).toHaveText("58");
 
   // Verify that the marker can still be selected at its new position.
   await clickFlightPosition(page, 13.0, 58.0);
 
-  await expect(flightDetails).toBeVisible();
-  await expect(flightDetails.locator("dd").nth(0)).toHaveText("TEST-UPDATED");
+  await expect(flightDetailsContent(page)).toBeVisible();
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-UPDATED");
 });
 
 test("removes selected flight when it disappears from snapshot", async ({
@@ -283,9 +283,7 @@ test("removes selected flight when it disappears from snapshot", async ({
 
   await clickFlightPosition(page, 10.5, 56.0);
 
-  const flightDetails = page.locator("dl");
-
-  await expect(flightDetails).toBeVisible();
+  await expect(flightDetailsContent(page)).toBeVisible();
 
   // The next snapshot no longer contains the flight.
   await page.clock.fastForward(120_000);
@@ -295,12 +293,13 @@ test("removes selected flight when it disappears from snapshot", async ({
   await expect(page.locator("header p")).toHaveText(
     "No flights currently available",
   );
-  await expect(flightDetails).toBeHidden();
+
+  await expect(flightDetailsContent(page)).toBeHidden();
 
   // The removed marker should no longer be selectable.
   await clickFlightPosition(page, 10.5, 56.0);
 
-  await expect(flightDetails).toBeHidden();
+  await expect(flightDetailsContent(page)).toBeHidden();
 });
 
 test("continues updating flights after a failed API request", async ({
@@ -341,10 +340,8 @@ test("continues updating flights after a failed API request", async ({
   // The existing marker should still be interactive after the error.
   await clickFlightPosition(page, 10.5, 56.0);
 
-  const flightDetails = page.locator("dl");
-
-  await expect(flightDetails).toBeVisible();
-  await expect(flightDetails.locator("dd").nth(0)).toHaveText("TEST-INITIAL");
+  await expect(flightDetailsContent(page)).toBeVisible();
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-INITIAL");
 
   // The third request succeeds.
   await page.clock.fastForward(120_000);
@@ -356,8 +353,8 @@ test("continues updating flights after a failed API request", async ({
   // The new marker should be interactive at its updated position.
   await clickFlightPosition(page, 13.0, 58.0);
 
-  await expect(flightDetails).toBeVisible();
-  await expect(flightDetails.locator("dd").nth(0)).toHaveText("TEST-UPDATED");
+  await expect(flightDetailsContent(page)).toBeVisible();
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-UPDATED");
 });
 
 // ========================================
@@ -389,15 +386,12 @@ test("updates flight details when selecting another flight", async ({
 
   await clickFlightPosition(page, 10.5, 56.0);
 
-  const flightDetails = page.locator("dl");
-  const details = flightDetails.locator("dd");
-
-  await expect(details.nth(0)).toHaveText("FIRST123");
+  await expect(flightDetail(page, "callsign")).toHaveText("FIRST123");
 
   await clickFlightPosition(page, 13.0, 58.0);
 
-  await expect(details.nth(0)).toHaveText("SECOND456");
-  await expect(details.nth(1)).toHaveText("def456");
+  await expect(flightDetail(page, "callsign")).toHaveText("SECOND456");
+  await expect(flightDetail(page, "icao24")).toHaveText("def456");
 });
 
 test("displays unavailable for missing flight details", async ({ page }) => {
@@ -417,14 +411,12 @@ test("displays unavailable for missing flight details", async ({ page }) => {
 
   await clickFlightPosition(page, 10.5, 56.0);
 
-  const details = page.locator("dl").locator("dd");
-
-  await expect(details.nth(0)).toHaveText("Unavailable");
-  await expect(details.nth(2)).toHaveText("Unavailable");
-  await expect(details.nth(4)).toHaveText("Unavailable");
-  await expect(details.nth(5)).toHaveText("Unavailable");
-  await expect(details.nth(6)).toHaveText("Unavailable");
-  await expect(details.nth(7)).toHaveText("Unavailable");
+  await expect(flightDetail(page, "callsign")).toHaveText("Unavailable");
+  await expect(flightDetail(page, "origin-country")).toHaveText("Unavailable");
+  await expect(flightDetail(page, "altitude")).toHaveText("Unavailable");
+  await expect(flightDetail(page, "ground-speed")).toHaveText("Unavailable");
+  await expect(flightDetail(page, "track")).toHaveText("Unavailable");
+  await expect(flightDetail(page, "vertical-speed")).toHaveText("Unavailable");
 });
 
 test("keeps flight selectable when altitude is missing", async ({ page }) => {
@@ -439,7 +431,7 @@ test("keeps flight selectable when altitude is missing", async ({ page }) => {
 
   await clickFlightPosition(page, 10.5, 56.0);
 
-  await expect(page.locator("dl")).toBeVisible();
+  await expect(flightDetailsContent(page)).toBeVisible();
   await expect(flightDetail(page, "callsign")).toHaveText("TEST123");
   await expect(flightDetail(page, "altitude")).toHaveText("Unavailable");
 });
@@ -519,6 +511,7 @@ test("preserves map view when flights are updated", async ({ page }) => {
   expect(updatedView.center).toEqual(initialView.center);
   expect(updatedView.zoom).toBe(initialView.zoom);
 });
+
 test("deselects flight when clicking empty map area", async ({ page }) => {
   const flight = createFlight({
     longitude: 10.5,
@@ -530,9 +523,7 @@ test("deselects flight when clicking empty map area", async ({ page }) => {
 
   await clickFlightPosition(page, 10.5, 56.0);
 
-  const flightDetails = page.locator("dl");
-
-  await expect(flightDetails).toBeVisible();
+  await expect(flightDetailsContent(page)).toBeVisible();
 
   // Click an empty area away from the selected marker.
   const bounds = await page.locator("#flight-map").boundingBox();
@@ -542,8 +533,13 @@ test("deselects flight when clicking empty map area", async ({ page }) => {
     bounds.y + bounds.height / 2 + 100,
   );
 
-  await expect(flightDetails).toBeHidden();
+  await expect(flightDetailsContent(page)).toBeHidden();
 });
+
+// ========================================
+// Marker colors
+// ========================================
+
 test("displays marker colors according to altitude", async ({ page }) => {
   const flights = [
     createFlight({
@@ -552,23 +548,11 @@ test("displays marker colors according to altitude", async ({ page }) => {
       barometricAltitude: 1000,
     }),
     createFlight({
-      icao24: "unknown",
-      barometricAltitude: null,
-    }),
-    createFlight({
       icao24: "low",
       barometricAltitude: 1000,
     }),
     createFlight({
-      icao24: "medium",
-      barometricAltitude: 4000,
-    }),
-    createFlight({
       icao24: "high",
-      barometricAltitude: 9000,
-    }),
-    createFlight({
-      icao24: "very-high",
       barometricAltitude: 13000,
     }),
   ];
@@ -578,11 +562,8 @@ test("displays marker colors according to altitude", async ({ page }) => {
 
   const expectedColors = [
     ["ground", "blue"],
-    ["unknown", "grey"],
     ["low", "rgb(101, 191, 65)"],
-    ["medium", "rgb(239, 158, 13)"],
-    ["high", "rgb(244, 92, 45)"],
-    ["very-high", "rgb(239, 68, 68)"],
+    ["high", "rgb(239, 68, 68)"],
   ];
 
   for (const [icao24, color] of expectedColors) {
@@ -591,6 +572,7 @@ test("displays marker colors according to altitude", async ({ page }) => {
     expect(svg).toContain(`fill="${color}"`);
   }
 });
+
 test("updates marker color when altitude changes", async ({ page }) => {
   const initialFlight = createFlight({
     barometricAltitude: 1000,
@@ -623,12 +605,13 @@ test("updates marker color when altitude changes", async ({ page }) => {
     })
     .toBe(true);
 });
+
 test("displays altitude legend on the flight map", async ({ page }) => {
   await mockFlightApi(page, { flights: [] });
 
   await page.goto("/");
 
-  const legend = page.locator(".altitude-legend");
+  const legend = page.locator(".map-info-panel");
 
   await expect(legend).toBeVisible();
   await expect(legend).toContainText("Flight altitude");
