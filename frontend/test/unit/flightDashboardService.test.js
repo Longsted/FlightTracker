@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import FlightDashboardService from "../../src/dashboard/FlightDashboardService.js";
+import FlightDashboardService from "../../src/dashboard/flightDashboardService.js";
 
 describe("FlightDashboardService", () => {
   let service;
