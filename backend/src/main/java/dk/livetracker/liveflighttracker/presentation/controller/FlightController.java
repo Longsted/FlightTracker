@@ -4,7 +4,6 @@ import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
 import dk.livetracker.liveflighttracker.application.service.FlightService;
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.util.List;
-
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,7 +27,7 @@ public class FlightController {
   }
 
   @GetMapping("/filter")
-  public List<Flight> filterFlights(@ModelAttribute FlightFilter filter){
+  public List<Flight> filterFlights(@ModelAttribute FlightFilter filter) {
     return flightService.filterFlights(filter);
   }
 }

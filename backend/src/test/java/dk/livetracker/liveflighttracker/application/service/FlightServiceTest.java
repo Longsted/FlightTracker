@@ -159,23 +159,21 @@ class FlightServiceTest {
     assertTrue(service.searchFlights("   ").isEmpty());
     assertTrue(service.searchFlights(null).isEmpty());
   }
+
   @Test
   void filterFlightsPassesValidFlightsToFlightFiltering() {
     // Given
     Flight validFlight = createFlight(10.0, 56.0);
     Flight invalidFlight = createFlight(181.0, 56.0);
 
-    FlightFilter filter = new FlightFilter(
-            "Denmark", null, null, null, null,
-            null, null, null, null, null
-    );
+    FlightFilter filter =
+        new FlightFilter("Denmark", null, null, null, null, null, null, null, null, null);
 
     List<Flight> snapshot = List.of(validFlight, invalidFlight);
     List<Flight> expectedFlights = List.of(validFlight);
 
     when(snapshotStore.getSnapshot()).thenReturn(snapshot);
-    when(flightFiltering.filter(expectedFlights, filter))
-            .thenReturn(expectedFlights);
+    when(flightFiltering.filter(expectedFlights, filter)).thenReturn(expectedFlights);
 
     // When
     List<Flight> result = service.filterFlights(filter);

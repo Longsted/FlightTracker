@@ -7,8 +7,6 @@ import dk.livetracker.liveflighttracker.application.interfaces.FlightSnapshotSto
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.util.List;
 import java.util.Locale;
-
-
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +17,9 @@ public class FlightService {
   private final FlightFiltering flightFiltering;
 
   public FlightService(
-      FlightDataProvider flightDataProvider, FlightSnapshotStore flightSnapshotStore,FlightFiltering flightFiltering) {
+      FlightDataProvider flightDataProvider,
+      FlightSnapshotStore flightSnapshotStore,
+      FlightFiltering flightFiltering) {
     this.flightDataProvider = flightDataProvider;
     this.flightSnapshotStore = flightSnapshotStore;
     this.flightFiltering = flightFiltering;
@@ -41,12 +41,10 @@ public class FlightService {
     }
 
     String searchTerm = query.trim().toLowerCase(Locale.ROOT);
-    return getCurrentFlights().stream().filter(flight -> matches(
-                                          flight, searchTerm)).toList();
+    return getCurrentFlights().stream().filter(flight -> matches(flight, searchTerm)).toList();
   }
 
-
-  public List<Flight> filterFlights(FlightFilter filter){
+  public List<Flight> filterFlights(FlightFilter filter) {
     return flightFiltering.filter(getCurrentFlights(), filter);
   }
 
@@ -61,5 +59,4 @@ public class FlightService {
   private boolean containsIgnoreCase(String value, String searchTerm) {
     return value != null && value.toLowerCase(Locale.ROOT).contains(searchTerm);
   }
-
 }

@@ -1,255 +1,218 @@
-
 package dk.livetracker.liveflighttracker.application.filter;
-
-import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
-import dk.livetracker.liveflighttracker.domain.Flight;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.time.Instant;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
+import dk.livetracker.liveflighttracker.domain.Flight;
+import java.time.Instant;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 class FlightFilteringTest {
 
-    private FlightFiltering flightFiltering;
+  private FlightFiltering flightFiltering;
 
-    @BeforeEach
-    void setUp() {
-        flightFiltering = new FlightFiltering();
-    }
+  @BeforeEach
+  void setUp() {
+    flightFiltering = new FlightFiltering();
+  }
 
-    @Test
-    void filterReturnsAllFlightsWhenNoFiltersAreActive() {
-        // Given
-        Flight flight1 = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
-        Flight flight2 = createFlight("Germany", 8000.0, 200.0, false, 11.0, 55.0);
+  @Test
+  void filterReturnsAllFlightsWhenNoFiltersAreActive() {
+    // Given
+    Flight flight1 = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+    Flight flight2 = createFlight("Germany", 8000.0, 200.0, false, 11.0, 55.0);
 
-        List<Flight> flights = List.of(flight1, flight2);
+    List<Flight> flights = List.of(flight1, flight2);
 
-        // When
-        List<Flight> result = flightFiltering.filter(flights, emptyFilter());
+    // When
+    List<Flight> result = flightFiltering.filter(flights, emptyFilter());
 
-        // Then
-        assertEquals(flights, result);
-    }
+    // Then
+    assertEquals(flights, result);
+  }
 
-    @Test
-    void filterReturnsEmptyListWhenFilterIsNull() {
-        // Given
-        List<Flight> flights = List.of(
-                createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0)
-        );
+  @Test
+  void filterReturnsEmptyListWhenFilterIsNull() {
+    // Given
+    List<Flight> flights = List.of(createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0));
 
-        // When
-        List<Flight> result = flightFiltering.filter(flights, null);
+    // When
+    List<Flight> result = flightFiltering.filter(flights, null);
 
-        // Then
-        assertTrue(result.isEmpty());
-    }
+    // Then
+    assertTrue(result.isEmpty());
+  }
 
-    @Test
-    void filterFiltersByOriginCountry() {
-        // Given
-        Flight denmarkFlight = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
-        Flight germanyFlight = createFlight("Germany", 8000.0, 200.0, false, 11.0, 55.0);
+  @Test
+  void filterFiltersByOriginCountry() {
+    // Given
+    Flight denmarkFlight = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+    Flight germanyFlight = createFlight("Germany", 8000.0, 200.0, false, 11.0, 55.0);
 
-        FlightFilter filter = new FlightFilter(
-                "Denmark", null, null, null, null,
-                null, null, null, null, null
-        );
+    FlightFilter filter =
+        new FlightFilter("Denmark", null, null, null, null, null, null, null, null, null);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(denmarkFlight, germanyFlight), filter);
+    // When
+    List<Flight> result = flightFiltering.filter(List.of(denmarkFlight, germanyFlight), filter);
 
-        // Then
-        assertEquals(List.of(denmarkFlight), result);
-    }
+    // Then
+    assertEquals(List.of(denmarkFlight), result);
+  }
 
-    @Test
-    void filterFiltersByAltitudeAndVelocity() {
-        // Given
-        Flight matchingFlight = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
-        Flight wrongAltitude = createFlight("Denmark", 3000.0, 250.0, false, 10.0, 56.0);
-        Flight wrongVelocity = createFlight("Denmark", 10000.0, 400.0, false, 10.0, 56.0);
+  @Test
+  void filterFiltersByAltitudeAndVelocity() {
+    // Given
+    Flight matchingFlight = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+    Flight wrongAltitude = createFlight("Denmark", 3000.0, 250.0, false, 10.0, 56.0);
+    Flight wrongVelocity = createFlight("Denmark", 10000.0, 400.0, false, 10.0, 56.0);
 
-        FlightFilter filter = new FlightFilter(
-                null, 5000.0, 12000.0, 150.0, 300.0,
-                null, null, null, null, null
-        );
+    FlightFilter filter =
+        new FlightFilter(null, 5000.0, 12000.0, 150.0, 300.0, null, null, null, null, null);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(matchingFlight, wrongAltitude, wrongVelocity), filter);
+    // When
+    List<Flight> result =
+        flightFiltering.filter(List.of(matchingFlight, wrongAltitude, wrongVelocity), filter);
 
-        // Then
-        assertEquals(List.of(matchingFlight), result);
-    }
+    // Then
+    assertEquals(List.of(matchingFlight), result);
+  }
 
-    @Test
-    void filterFiltersByFlightStatus() {
-        // Given
-        Flight onGround = createFlight("Denmark", 0.0, 0.0, true, 10.0, 56.0);
-        Flight airborne = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+  @Test
+  void filterFiltersByFlightStatus() {
+    // Given
+    Flight onGround = createFlight("Denmark", 0.0, 0.0, true, 10.0, 56.0);
+    Flight airborne = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
 
-        FlightFilter filter = new FlightFilter(
-                null, null, null, null, null,
-                false, null, null, null, null
-        );
+    FlightFilter filter =
+        new FlightFilter(null, null, null, null, null, false, null, null, null, null);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(onGround, airborne), filter);
+    // When
+    List<Flight> result = flightFiltering.filter(List.of(onGround, airborne), filter);
 
-        // Then
-        assertEquals(List.of(airborne), result);
-    }
+    // Then
+    assertEquals(List.of(airborne), result);
+  }
 
-    @Test
-    void filterFiltersByGeographicalArea() {
-        // Given
-        Flight insideArea = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
-        Flight outsideArea = createFlight("Germany", 10000.0, 250.0, false, 20.0, 60.0);
+  @Test
+  void filterFiltersByGeographicalArea() {
+    // Given
+    Flight insideArea = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+    Flight outsideArea = createFlight("Germany", 10000.0, 250.0, false, 20.0, 60.0);
 
-        FlightFilter filter = new FlightFilter(
-                null, null, null, null, null,
-                null, 8.0, 13.0, 54.0, 58.0
-        );
+    FlightFilter filter =
+        new FlightFilter(null, null, null, null, null, null, 8.0, 13.0, 54.0, 58.0);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(insideArea, outsideArea), filter);
+    // When
+    List<Flight> result = flightFiltering.filter(List.of(insideArea, outsideArea), filter);
 
-        // Then
-        assertEquals(List.of(insideArea), result);
-    }
+    // Then
+    assertEquals(List.of(insideArea), result);
+  }
 
-    @Test
-    void filterCombinesMultipleCriteria() {
-        // Given
-        Flight matchingFlight = createFlight(
-                "Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+  @Test
+  void filterCombinesMultipleCriteria() {
+    // Given
+    Flight matchingFlight = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
 
-        Flight wrongCountry = createFlight(
-                "Germany", 10000.0, 250.0, false, 10.0, 56.0);
+    Flight wrongCountry = createFlight("Germany", 10000.0, 250.0, false, 10.0, 56.0);
 
-        Flight wrongAltitude = createFlight(
-                "Denmark", 3000.0, 250.0, false, 10.0, 56.0);
+    Flight wrongAltitude = createFlight("Denmark", 3000.0, 250.0, false, 10.0, 56.0);
 
-        Flight wrongStatus = createFlight(
-                "Denmark", 10000.0, 250.0, true, 10.0, 56.0);
+    Flight wrongStatus = createFlight("Denmark", 10000.0, 250.0, true, 10.0, 56.0);
 
-        FlightFilter filter = new FlightFilter(
-                "Denmark", 5000.0, 12000.0, 150.0, 300.0,
-                false, 8.0, 13.0, 54.0, 58.0
-        );
+    FlightFilter filter =
+        new FlightFilter("Denmark", 5000.0, 12000.0, 150.0, 300.0, false, 8.0, 13.0, 54.0, 58.0);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(matchingFlight, wrongCountry, wrongAltitude, wrongStatus),
-                filter);
+    // When
+    List<Flight> result =
+        flightFiltering.filter(
+            List.of(matchingFlight, wrongCountry, wrongAltitude, wrongStatus), filter);
 
-        // Then
-        assertEquals(List.of(matchingFlight), result);
-    }
-    @Test
-    void filterExcludesFlightsWithMissingAltitude() {
-        // Given
-        Flight missingAltitude = createFlight(
-                "Denmark", null, 250.0, false, 10.0, 56.0);
+    // Then
+    assertEquals(List.of(matchingFlight), result);
+  }
 
-        Flight validAltitude = createFlight(
-                "Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+  @Test
+  void filterExcludesFlightsWithMissingAltitude() {
+    // Given
+    Flight missingAltitude = createFlight("Denmark", null, 250.0, false, 10.0, 56.0);
 
-        FlightFilter filter = new FlightFilter(
-                null, 5000.0, null, null, null,
-                null, null, null, null, null
-        );
+    Flight validAltitude = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(missingAltitude, validAltitude), filter);
+    FlightFilter filter =
+        new FlightFilter(null, 5000.0, null, null, null, null, null, null, null, null);
 
-        // Then
-        assertEquals(List.of(validAltitude), result);
-    }
-    @Test
-    void filterExcludesFlightsWithInvalidCoordinates() {
-        // Given
-        Flight invalidCoordinates = createFlight(
-                "Denmark", 10000.0, 250.0, false, 181.0, 56.0);
+    // When
+    List<Flight> result = flightFiltering.filter(List.of(missingAltitude, validAltitude), filter);
 
-        Flight validCoordinates = createFlight(
-                "Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+    // Then
+    assertEquals(List.of(validAltitude), result);
+  }
 
-        FlightFilter filter = new FlightFilter(
-                null, null, null, null, null,
-                null, 8.0, 13.0, 54.0, 58.0
-        );
+  @Test
+  void filterExcludesFlightsWithInvalidCoordinates() {
+    // Given
+    Flight invalidCoordinates = createFlight("Denmark", 10000.0, 250.0, false, 181.0, 56.0);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(invalidCoordinates, validCoordinates), filter);
+    Flight validCoordinates = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
 
-        // Then
-        assertEquals(List.of(validCoordinates), result);
-    }
-    @Test
-    void filterIncludesFlightsAtAltitudeBoundaries() {
-        // Given
-        Flight atMinimum = createFlight(
-                "Denmark", 5000.0, 250.0, false, 10.0, 56.0);
+    FlightFilter filter =
+        new FlightFilter(null, null, null, null, null, null, 8.0, 13.0, 54.0, 58.0);
 
-        Flight atMaximum = createFlight(
-                "Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+    // When
+    List<Flight> result =
+        flightFiltering.filter(List.of(invalidCoordinates, validCoordinates), filter);
 
-        Flight outsideRange = createFlight(
-                "Denmark", 12000.0, 250.0, false, 10.0, 56.0);
+    // Then
+    assertEquals(List.of(validCoordinates), result);
+  }
 
-        FlightFilter filter = new FlightFilter(
-                null, 5000.0, 10000.0, null, null,
-                null, null, null, null, null
-        );
+  @Test
+  void filterIncludesFlightsAtAltitudeBoundaries() {
+    // Given
+    Flight atMinimum = createFlight("Denmark", 5000.0, 250.0, false, 10.0, 56.0);
 
-        // When
-        List<Flight> result = flightFiltering.filter(
-                List.of(atMinimum, atMaximum, outsideRange), filter);
+    Flight atMaximum = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
 
-        // Then
-        assertEquals(List.of(atMinimum, atMaximum), result);
-    }
+    Flight outsideRange = createFlight("Denmark", 12000.0, 250.0, false, 10.0, 56.0);
 
-    private FlightFilter emptyFilter() {
-        return new FlightFilter(
-                null, null, null, null, null,
-                null, null, null, null, null
-        );
-    }
+    FlightFilter filter =
+        new FlightFilter(null, 5000.0, 10000.0, null, null, null, null, null, null, null);
 
-    private Flight createFlight(
-            String country,
-            Double altitude,
-            Double velocity,
-            boolean onGround,
-            Double longitude,
-            Double latitude) {
+    // When
+    List<Flight> result =
+        flightFiltering.filter(List.of(atMinimum, atMaximum, outsideRange), filter);
 
-        return new Flight(
-                "abc123",
-                "SAS123",
-                country,
-                Instant.parse("2026-11-11T10:00:00Z"),
-                Instant.parse("2026-11-11T10:00:00Z"),
-                longitude,
-                latitude,
-                altitude,
-                onGround,
-                velocity,
-                180.0,
-                0.0
-        );
-    }
+    // Then
+    assertEquals(List.of(atMinimum, atMaximum), result);
+  }
+
+  private FlightFilter emptyFilter() {
+    return new FlightFilter(null, null, null, null, null, null, null, null, null, null);
+  }
+
+  private Flight createFlight(
+      String country,
+      Double altitude,
+      Double velocity,
+      boolean onGround,
+      Double longitude,
+      Double latitude) {
+
+    return new Flight(
+        "abc123",
+        "SAS123",
+        country,
+        Instant.parse("2026-11-11T10:00:00Z"),
+        Instant.parse("2026-11-11T10:00:00Z"),
+        longitude,
+        latitude,
+        altitude,
+        onGround,
+        velocity,
+        180.0,
+        0.0);
+  }
 }

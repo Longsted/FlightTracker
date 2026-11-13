@@ -1,6 +1,6 @@
 package dk.livetracker.liveflighttracker.application.dto;
 
-public record FlightFilter (
+public record FlightFilter(
     String originCountry,
     Double minAltitude,
     Double maxAltitude,
@@ -10,5 +10,4 @@ public record FlightFilter (
     Double minLongitude,
     Double maxLongitude,
     Double minLatitude,
-    Double maxLatitude
-){}
+    Double maxLatitude) {}
