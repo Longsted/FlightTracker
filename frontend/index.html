@@ -7,7 +7,373 @@
     <title>Live Flight Tracker</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="tracker-app" x-data="flightDashboard">
+        <header class="app-header">
+          <div
+            class="container-fluid d-flex align-items-center justify-content-between gap-3"
+          >
+            <div>
+              <h1 class="h4 mb-0">Live Flight Tracker</h1>
+              <p
+                class="small text-body-secondary mb-0 mt-1"
+                x-text="statusMessage"
+              ></p>
+            </div>
+            <div class="header-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span class="small">Live data</span>
+            </div>
+          </div>
+        </header>
+
+        <main class="tracker-main">
+          <div
+            class="workspace"
+            :class="{
+                'left-panel-closed': !leftPanelOpen,
+                'right-panel-closed': !rightPanelOpen
+            }"
+          >
+            <!-- Left panel: flight list and search -->
+            <aside
+              class="side-panel flight-list-panel"
+              x-cloak
+              x-show="leftPanelOpen"
+            >
+              <div class="panel-heading">
+                <div>
+                  <h2 class="h6 mb-1">Flights</h2>
+                  <p class="small text-body-secondary mb-0">
+                    <span x-text="flights.length"></span> aircraft available
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="icon-button panel-close-button"
+                  @click="leftPanelOpen = false"
+                  aria-label="Hide flight list"
+                  title="Hide flight list"
+                >
+                  &lsaquo;
+                </button>
+              </div>
+
+              <form class="flight-search" @submit.prevent="searchFlights()">
+                <label class="visually-hidden" for="flight-search"
+                  >Search flights</label
+                >
+                <input
+                  id="flight-search"
+                  type="search"
+                  class="form-control"
+                  placeholder="Callsign or ICAO24"
+                  x-model="searchQuery"
+                  aria-label="Search flights"
+                />
+                <button type="submit" class="btn btn-primary">Search</button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary clear-search-button"
+                  x-show="searchPerformed || searchQuery"
+                  @click="clearSearch()"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  &times;
+                </button>
+              </form>
+
+              <div
+                class="flight-list-meta small text-body-secondary"
+                x-show="searchPerformed"
+              >
+                <span x-text="searchResults.length"></span> search results
+              </div>
+
+              <div class="flight-list" aria-label="Available flights">
+                <template
+                  x-if="searchPerformed && displayedFlights.length === 0"
+                >
+                  <p class="empty-state small">No matching flights found.</p>
+                </template>
+                <template
+                  x-if="!searchPerformed && displayedFlights.length === 0"
+                >
+                  <p class="empty-state small">
+                    No flights currently available.
+                  </p>
+                </template>
+                <template
+                  x-for="flight in displayedFlights"
+                  :key="flight.icao24"
+                >
+                  <button
+                    type="button"
+                    class="flight-list-item"
+                    :class="{ 'is-selected': selectedFlight?.icao24 === flight.icao24 }"
+                    @click="selectFlight(flight)"
+                  >
+                    <span class="flight-list-main">
+                      <span
+                        class="flight-callsign"
+                        x-text="flight.callsign?.trim() || 'Unknown callsign'"
+                      ></span>
+                      <span class="flight-icao" x-text="flight.icao24"></span>
+                    </span>
+                    <span class="flight-list-side">
+                      <span
+                        class="flight-altitude"
+                        x-text="flight.barometricAltitude != null
+                                            ? Math.round(flight.barometricAltitude).toLocaleString('da-DK') + ' m'
+                                            : '—'"
+                      ></span>
+                      <span
+                        class="flight-state"
+                        x-text="flight.onGround ? 'On ground' : 'In flight'"
+                      ></span>
+                    </span>
+                  </button>
+                </template>
+              </div>
+            </aside>
+
+            <!-- Main map area. Keep #flight-map as the OpenLayers target. -->
+            <section class="map-workspace" aria-label="Flight map">
+              <div class="map-toolbar">
+                <div class="map-toolbar-start">
+                  <button
+                    type="button"
+                    class="icon-button panel-open-button"
+                    x-show="!leftPanelOpen"
+                    @click="leftPanelOpen = true"
+                    aria-label="Show flight list"
+                    title="Show flight list"
+                  >
+                    &rsaquo;
+                  </button>
+                  <h2 class="h6 mb-0">Flight map</h2>
+                </div>
+                <button
+                  type="button"
+                  class="icon-button panel-open-button"
+                  x-show="!rightPanelOpen"
+                  @click="rightPanelOpen = true"
+                  aria-label="Show map information"
+                  title="Show map information"
+                >
+                  &lsaquo;
+                </button>
+              </div>
+
+              <div class="map-container">
+                <div
+                  id="flight-map"
+                  class="flight-map"
+                  aria-label="Map showing current flight positions"
+                ></div>
+              </div>
+            </section>
+
+            <!-- Right panel: map information / legend -->
+            <aside
+              class="side-panel map-info-panel"
+              x-cloak
+              x-show="rightPanelOpen"
+            >
+              <div class="panel-heading">
+                <div>
+                  <h2 class="h6 mb-1">Map information</h2>
+                  <p class="small text-body-secondary mb-0">Flight altitude</p>
+                </div>
+                <button
+                  type="button"
+                  class="icon-button panel-close-button"
+                  @click="rightPanelOpen = false"
+                  aria-label="Hide map information"
+                  title="Hide map information"
+                >
+                  &rsaquo;
+                </button>
+              </div>
+
+              <div class="map-info-content">
+                <div class="altitude-gradient"></div>
+                <div class="altitude-labels">
+                  <span>0 m</span>
+                  <span>3.000 m</span>
+                  <span>6.000 m</span>
+                  <span>12.000 m+</span>
+                </div>
+                <div class="legend-divider"></div>
+                <div class="altitude-special">
+                  <span><i class="legend-color ground"></i>On ground</span>
+                  <span
+                    ><i class="legend-color unknown"></i>Unknown altitude</span
+                  >
+                </div>
+                <p class="small text-body-secondary map-info-note">
+                  Aircraft colors indicate their barometric altitude.
+                </p>
+              </div>
+            </aside>
+          </div>
+
+          <!-- Selected flight details span the full dashboard width. -->
+          <section class="details-panel" aria-label="Selected flight details">
+            <div class="details-heading">
+              <div>
+                <h2 class="h6 mb-1">Flight details</h2>
+                <p
+                  class="small text-body-secondary mb-0"
+                  x-show="!selectedFlight"
+                >
+                  Select an aircraft on the map or in the flight list.
+                </p>
+                <p
+                  class="small text-body-secondary mb-0"
+                  x-show="selectedFlight"
+                >
+                  Selected aircraft:
+                  <strong
+                    x-text="selectedFlight?.callsign?.trim() || selectedFlight?.icao24"
+                  ></strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                x-show="selectedFlight"
+                @click="clearSelectedFlight()"
+              >
+                Clear selection
+              </button>
+            </div>
+
+            <div class="details-content" x-cloak x-show="selectedFlight">
+              <div class="detail-group">
+                <h3>Aircraft</h3>
+                <dl>
+                  <div class="detail-item">
+                    <dt>Callsign</dt>
+                    <dd
+                      data-testid="flight-callsign"
+                      x-text="selectedFlight?.callsign?.trim() || 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>ICAO24</dt>
+                    <dd
+                      data-testid="flight-icao24"
+                      x-text="selectedFlight?.icao24 || 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>Origin country</dt>
+                    <dd
+                      data-testid="flight-origin-country"
+                      x-text="selectedFlight?.originCountry || 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>Status</dt>
+                    <dd
+                      data-testid="flight-status"
+                      x-text="selectedFlight?.onGround ? 'On ground' : 'In flight'"
+                    ></dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div class="detail-group">
+                <h3>Flight conditions</h3>
+                <dl>
+                  <div class="detail-item">
+                    <dt>Altitude</dt>
+                    <dd
+                      data-testid="flight-altitude"
+                      x-text="selectedFlight?.barometricAltitude != null
+                                        ? Math.round(selectedFlight.barometricAltitude).toLocaleString('da-DK') + ' m'
+                                        : 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>Ground speed</dt>
+                    <dd
+                      data-testid="flight-ground-speed"
+                      x-text="selectedFlight?.velocity != null
+                                        ? selectedFlight.velocity + ' m/s'
+                                        : 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>Track</dt>
+                    <dd
+                      data-testid="flight-track"
+                      x-text="selectedFlight?.heading != null
+                                        ? selectedFlight.heading + '°'
+                                        : 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>Vertical speed</dt>
+                    <dd
+                      data-testid="flight-vertical-speed"
+                      x-text="selectedFlight?.verticalRate != null
+                                        ? selectedFlight.verticalRate + ' m/s'
+                                        : 'Unavailable'"
+                    ></dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div class="detail-group">
+                <h3>Position</h3>
+                <dl>
+                  <div class="detail-item">
+                    <dt>Longitude</dt>
+                    <dd
+                      data-testid="flight-longitude"
+                      x-text="selectedFlight?.longitude ?? 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>Latitude</dt>
+                    <dd
+                      data-testid="flight-latitude"
+                      x-text="selectedFlight?.latitude ?? 'Unavailable'"
+                    ></dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div class="detail-group">
+                <h3>Data timestamps</h3>
+                <dl>
+                  <div class="detail-item">
+                    <dt>Time position</dt>
+                    <dd
+                      x-text="selectedFlight?.timePosition
+                                    ? new Date(selectedFlight.timePosition).toLocaleString('da-DK')
+                                    : 'Unavailable'"
+                    ></dd>
+                  </div>
+                  <div class="detail-item">
+                    <dt>Last contact</dt>
+                    <dd
+                      x-text="selectedFlight?.lastContact
+                                    ? new Date(selectedFlight.lastContact).toLocaleString('da-DK')
+                                    : 'Unavailable'"
+                    ></dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
