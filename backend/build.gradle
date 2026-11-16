@@ -32,6 +32,17 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+tasks.register('bootRunE2E', org.springframework.boot.gradle.tasks.run.BootRun) {
+	group = 'application'
+	description = 'Runs the application with the E2E test provider.'
+
+	dependsOn tasks.named('testClasses')
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'dk.livetracker.liveflighttracker.LiveFlightTrackerApplication'
+
+	args '--spring.profiles.active=e2e'
+}
+
 tasks.named('spotbugsMain') {
 	reports {
 		html.required = true
