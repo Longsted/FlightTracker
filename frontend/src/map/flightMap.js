@@ -16,6 +16,7 @@ let flightSource;
 let map;
 
 let highlightedIds = null;
+let filteredIds = null;
 let previousView = null;
 
 const MAP_CENTER = [10.5, 56.0];
@@ -137,7 +138,7 @@ export function updateFlights(flights) {
   }
 
   // Reapply search highlighting after updating the flight data.
-  applySearchHighlighting();
+  applyVisibilityRules();
 }
 
 export function highlightFlights(icao24s) {
@@ -156,7 +157,7 @@ export function highlightFlights(icao24s) {
   }
 
   highlightedIds = new Set(icao24s);
-  applySearchHighlighting();
+  applyVisibilityRules();
 }
 
 export function clearFlightHighlights() {
@@ -165,7 +166,7 @@ export function clearFlightHighlights() {
   }
 
   highlightedIds = null;
-  applySearchHighlighting();
+  applyVisibilityRules();
 
   if (previousView) {
     const view = map.getView();
@@ -192,7 +193,7 @@ export function zoomToFlight(flight) {
   });
 }
 
-function applySearchHighlighting() {
+function applyVisibilityRules() {
   if (!flightSource) {
     return;
   }
@@ -200,11 +201,35 @@ function applySearchHighlighting() {
   flightSource.getFeatures().forEach((feature) => {
     const flight = feature.get("flight");
 
-    const isDimmed =
-      highlightedIds !== null && !highlightedIds.has(flight.icao24);
+    const matchesSearch =
+      highlightedIds === null || highlightedIds.has(flight.icao24);
 
-    feature.setStyle(getFeatureStyle(flight, isDimmed ? 0 : 1));
+    const matchesFilters =
+      filteredIds === null || filteredIds.has(flight.icao24);
+
+    const isVisible = matchesSearch && matchesFilters;
+
+    const opacity = isVisible ? 1 : 0;
+
+    feature.setStyle(getFeatureStyle(flight, opacity));
   });
+}
+export function filterFlights(icao24s) {
+  if (!flightSource) {
+    return;
+  }
+
+  filteredIds = new Set(icao24s);
+  applyVisibilityRules();
+}
+
+export function clearFlightFilters() {
+  if (!flightSource) {
+    return;
+  }
+
+  filteredIds = null;
+  applyVisibilityRules();
 }
 
 function getFeatureStyle(flight, opacity = 1) {

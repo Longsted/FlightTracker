@@ -20,6 +20,7 @@ describe("flightDashboardService", () => {
     flightApi = {
       getFlights: vi.fn(),
       searchFlights: vi.fn(),
+      filterFlights: vi.fn(),
     };
 
     flightMap = {
@@ -28,6 +29,7 @@ describe("flightDashboardService", () => {
       highlightFlights: vi.fn(),
       clearFlightHighlights: vi.fn(),
       zoomToFlight: vi.fn(),
+      filterFlights: vi.fn(),
     };
 
     service = new FlightDashboardService(flightApi, flightMap);
@@ -130,6 +132,121 @@ describe("flightDashboardService", () => {
       await expect(service.searchFlights("SAS")).rejects.toThrow(
         "Search failed",
       );
+    });
+  });
+
+  describe("filterFlights", () => {
+    it("filters flights and updates the map with matching flight IDs", async () => {
+      // Given
+      const filters = { originCountry: "Denmark" };
+      flightApi.filterFlights.mockResolvedValue([flight1, flight2]);
+
+      // When
+      const result = await service.filterFlights(filters);
+
+      // Then
+      expect(flightApi.filterFlights).toHaveBeenCalledWith(
+        filters,
+        expect.any(AbortSignal),
+      );
+
+      expect(flightMap.filterFlights).toHaveBeenCalledWith([
+        "abc123",
+        "def456",
+      ]);
+
+      expect(result).toEqual([flight1, flight2]);
+    });
+
+    it("updates the map with an empty list when no flights match", async () => {
+      // Given
+      flightApi.filterFlights.mockResolvedValue([]);
+
+      // When
+      const result = await service.filterFlights({
+        originCountry: "Unknown",
+      });
+
+      // Then
+      expect(flightMap.filterFlights).toHaveBeenCalledWith([]);
+      expect(result).toEqual([]);
+    });
+
+    it("propagates filtering errors", async () => {
+      // Given
+      flightApi.filterFlights.mockRejectedValue(new Error("Filtering failed"));
+
+      // When & Then
+      await expect(
+        service.filterFlights({ originCountry: "Denmark" }),
+      ).rejects.toThrow("Filtering failed");
+    });
+
+    it("returns null when filtering is aborted", async () => {
+      // Given
+      const abortError = new Error("Request aborted");
+      abortError.name = "AbortError";
+
+      flightApi.filterFlights.mockRejectedValue(abortError);
+
+      // When
+      const result = await service.filterFlights({});
+
+      // Then
+      expect(result).toBeNull();
+      expect(flightMap.filterFlights).not.toHaveBeenCalled();
+    });
+
+    it("passes multiple filters to the API", async () => {
+      const filters = {
+        originCountry: "Denmark",
+        onGround: false,
+        callsign: "SAS",
+      };
+
+      flightApi.filterFlights.mockResolvedValue([flight1]);
+
+      const result = await service.filterFlights(filters);
+
+      expect(flightApi.filterFlights).toHaveBeenCalledWith(
+        filters,
+        expect.any(AbortSignal),
+      );
+
+      expect(result).toEqual([flight1]);
+    });
+
+    it("aborts the previous filtering request when a new one starts", async () => {
+      let firstSignal;
+
+      flightApi.filterFlights.mockImplementationOnce((_filters, signal) => {
+        firstSignal = signal;
+
+        return new Promise((resolve, reject) => {
+          signal.addEventListener("abort", () => {
+            const error = new Error("Request aborted");
+            error.name = "AbortError";
+            reject(error);
+          });
+        });
+      });
+
+      flightApi.filterFlights.mockResolvedValueOnce([flight2]);
+
+      const firstRequest = service.filterFlights({
+        originCountry: "Denmark",
+      });
+
+      const secondRequest = service.filterFlights({
+        originCountry: "Germany",
+      });
+
+      await expect(firstRequest).resolves.toBeNull();
+      await expect(secondRequest).resolves.toEqual([flight2]);
+
+      expect(firstSignal.aborted).toBe(true);
+      expect(flightMap.filterFlights).toHaveBeenCalledOnce();
+      expect(flightMap.filterFlights).toHaveBeenCalledWith(["def456"]);
     });
   });
 

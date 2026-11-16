@@ -9,9 +9,11 @@ import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStates
 import dk.livetracker.liveflighttracker.infrastructure.opensky.mapper.OpenSkyStateVectorMapper;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile("!e2e")
 public class OpenSkyFlightDataProvider implements FlightDataProvider {
 
   private final OpenSkyClient openSkyClient;

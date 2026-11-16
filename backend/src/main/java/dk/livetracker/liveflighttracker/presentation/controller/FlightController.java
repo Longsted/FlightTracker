@@ -1,12 +1,10 @@
 package dk.livetracker.liveflighttracker.presentation.controller;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
 import dk.livetracker.liveflighttracker.application.service.FlightService;
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.util.List;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/flights")
@@ -26,5 +24,10 @@ public class FlightController {
   @GetMapping("/search")
   public List<Flight> searchFlights(@RequestParam String query) {
     return flightService.searchFlights(query);
+  }
+
+  @GetMapping("/filter")
+  public List<Flight> filterFlights(@ModelAttribute FlightFilter filter) {
+    return flightService.filterFlights(filter);
   }
 }

@@ -1,5 +1,7 @@
 package dk.livetracker.liveflighttracker.application.service;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
+import dk.livetracker.liveflighttracker.application.filter.FlightFiltering;
 import dk.livetracker.liveflighttracker.application.interfaces.FlightDataProvider;
 import dk.livetracker.liveflighttracker.application.interfaces.FlightSnapshotStore;
 import dk.livetracker.liveflighttracker.domain.Flight;
@@ -12,11 +14,15 @@ public class FlightService {
 
   private final FlightDataProvider flightDataProvider;
   private final FlightSnapshotStore flightSnapshotStore;
+  private final FlightFiltering flightFiltering;
 
   public FlightService(
-      FlightDataProvider flightDataProvider, FlightSnapshotStore flightSnapshotStore) {
+      FlightDataProvider flightDataProvider,
+      FlightSnapshotStore flightSnapshotStore,
+      FlightFiltering flightFiltering) {
     this.flightDataProvider = flightDataProvider;
     this.flightSnapshotStore = flightSnapshotStore;
+    this.flightFiltering = flightFiltering;
   }
 
   public List<Flight> getCurrentFlights() {
@@ -29,14 +35,17 @@ public class FlightService {
   }
 
   public List<Flight> searchFlights(String query) {
-    List<Flight> currentSnapshot = flightSnapshotStore.getSnapshot();
 
     if (query == null || query.isBlank()) {
       return List.of();
     }
 
     String searchTerm = query.trim().toLowerCase(Locale.ROOT);
-    return currentSnapshot.stream().filter(f -> matches(f, searchTerm)).toList();
+    return getCurrentFlights().stream().filter(flight -> matches(flight, searchTerm)).toList();
+  }
+
+  public List<Flight> filterFlights(FlightFilter filter) {
+    return flightFiltering.filter(getCurrentFlights(), filter);
   }
 
   private boolean matches(Flight flight, String searchTerm) {

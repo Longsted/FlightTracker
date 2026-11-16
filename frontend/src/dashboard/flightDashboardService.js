@@ -2,6 +2,7 @@ export default class FlightDashboardService {
   constructor(flightApi, flightMap) {
     this.flightApi = flightApi;
     this.flightMap = flightMap;
+    this.filterAbortController = null;
   }
 
   async refreshFlights(selectedFlight, mapInitialized) {
@@ -41,7 +42,48 @@ export default class FlightDashboardService {
     return results;
   }
 
+  async filterFlights(filters) {
+    this.filterAbortController?.abort();
+
+    const controller = new AbortController();
+    this.filterAbortController = controller;
+
+    try {
+      const results = await this.flightApi.filterFlights(
+        filters,
+        controller.signal,
+      );
+
+      if (this.filterAbortController !== controller) {
+        return null;
+      }
+
+      const flightIds = results.map((flight) => flight.icao24);
+      this.flightMap.filterFlights(flightIds);
+      return results;
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return null;
+      }
+
+      throw error;
+    } finally {
+      if (this.filterAbortController === controller) {
+        this.filterAbortController = null;
+      }
+    }
+  }
+
+  clearFilters() {
+    this.filterAbortController?.abort();
+    this.filterAbortController = null;
+
+    this.flightMap.clearFlightFilters();
+  }
+
   clearSearch() {
+    this.filterAbortController?.abort();
+    this.filterAbortController = null;
     this.flightMap.clearFlightHighlights();
   }
 
