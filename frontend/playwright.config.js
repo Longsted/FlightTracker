@@ -1,14 +1,15 @@
-/*global process*/
+/* global process */
 // @ts-check
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./test",
   testMatch: "**/*.spec.js",
+
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   reporter: "html",
 
   use: {
@@ -18,14 +19,31 @@ export default defineConfig({
 
   projects: [
     {
-      name: "chromium",
+      name: "integration",
+      testMatch: "integration/**/*.spec.js",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "e2e",
+      testMatch: "e2e/**/*.spec.js",
       use: { ...devices["Desktop Chrome"] },
     },
   ],
 
-  webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --mode test",
-    url: "http://127.0.0.1:5173",
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command: "gradlew.bat bootRunE2E",
+      cwd: "../backend",
+      url: "http://localhost:8080/api/flights",
+      reuseExistingServer: !process.env.CI,
+      timeout: 180000,
+    },
+    {
+      command: "npm run dev -- --host 127.0.0.1 --mode test",
+      cwd: ".",
+      url: "http://127.0.0.1:5173",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  ],
 });
