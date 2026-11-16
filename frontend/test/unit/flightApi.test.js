@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { getFlights, searchFlights } from "../../src/dashboard/flightApi.js";
+import {
+  getFlights,
+  searchFlights,
+  filterFlights,
+} from "../../src/dashboard/flightApi.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -88,6 +92,20 @@ describe("getFlights", () => {
 
       // When & Then
       await expect(searchFlights("SAS123")).rejects.toThrow("HTTP error: 500");
+    });
+  });
+  describe("filterFlights", () => {
+    it("propagates network errors", async () => {
+      // Given
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockRejectedValue(new Error("Network error")),
+      );
+
+      // When & Then
+      await expect(
+        filterFlights({}, new AbortController().signal),
+      ).rejects.toThrow("Network error");
     });
   });
 });

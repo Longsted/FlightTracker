@@ -84,6 +84,108 @@
                 </button>
               </form>
 
+              <!-- Flight filters -->
+              <div class="flight-filters">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h6 class="mb-2">Filters</h6>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    @click="clearFilters()"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+
+                <!-- Origin country -->
+                <div class="mb-2">
+                  <label for="originCountry" class="form-label">
+                    Origin country
+                  </label>
+                  <select
+                    id="originCountry"
+                    class="form-select form-select-sm"
+                    x-model="originCountry"
+                    @change="applyFilters()"
+                  >
+                    <option value="">All countries</option>
+                    <template
+                      x-for="country in availableCountries"
+                      :key="country"
+                    >
+                      <option :value="country" x-text="country"></option>
+                    </template>
+                  </select>
+                </div>
+
+                <!-- Altitude -->
+                <div class="mb-2">
+                  <label class="form-label">Altitude (m)</label>
+                  <div class="row g-2">
+                    <div class="col">
+                      <input
+                        type="number"
+                        class="form-control form-control-sm"
+                        x-model="minAltitude"
+                        @input="scheduleFilterUpdate()"
+                        placeholder="Min"
+                      />
+                    </div>
+                    <div class="col">
+                      <input
+                        type="number"
+                        class="form-control form-control-sm"
+                        x-model="maxAltitude"
+                        @input="scheduleFilterUpdate()"
+                        placeholder="Max"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Velocity -->
+                <div class="mb-2">
+                  <label class="form-label">Velocity (m/s)</label>
+                  <div class="row g-2">
+                    <div class="col">
+                      <input
+                        type="number"
+                        class="form-control form-control-sm"
+                        x-model="minVelocity"
+                        @input="scheduleFilterUpdate()"
+                        placeholder="Min"
+                      />
+                    </div>
+                    <div class="col">
+                      <input
+                        type="number"
+                        class="form-control form-control-sm"
+                        x-model="maxVelocity"
+                        @input="scheduleFilterUpdate()"
+                        placeholder="Max"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Flight status -->
+                <div class="mb-2">
+                  <label for="onGround" class="form-label">
+                    Flight status
+                  </label>
+                  <select
+                    id="onGround"
+                    class="form-select form-select-sm"
+                    x-model="onGround"
+                    @change="applyFilters()"
+                  >
+                    <option value="">All flights</option>
+                    <option value="false">Airborne</option>
+                    <option value="true">On ground</option>
+                  </select>
+                </div>
+              </div>
+
               <div
                 class="flight-list-meta small text-body-secondary"
                 x-show="searchPerformed"
@@ -92,18 +194,31 @@
               </div>
 
               <div class="flight-list" aria-label="Available flights">
+                <!-- No search results -->
                 <template
                   x-if="searchPerformed && displayedFlights.length === 0"
                 >
                   <p class="empty-state small">No matching flights found.</p>
                 </template>
+
+                <!-- No filter results -->
                 <template
-                  x-if="!searchPerformed && displayedFlights.length === 0"
+                  x-if="!searchPerformed && filtersApplied && displayedFlights.length === 0"
+                >
+                  <p class="empty-state small">
+                    No flights match the selected filters.
+                  </p>
+                </template>
+
+                <!-- No flights available -->
+                <template
+                  x-if="!searchPerformed && !filtersApplied && displayedFlights.length === 0"
                 >
                   <p class="empty-state small">
                     No flights currently available.
                   </p>
                 </template>
+
                 <template
                   x-for="flight in displayedFlights"
                   :key="flight.icao24"
@@ -121,12 +236,13 @@
                       ></span>
                       <span class="flight-icao" x-text="flight.icao24"></span>
                     </span>
+
                     <span class="flight-list-side">
                       <span
                         class="flight-altitude"
                         x-text="flight.barometricAltitude != null
-                                            ? Math.round(flight.barometricAltitude).toLocaleString('da-DK') + ' m'
-                                            : '—'"
+                        ? Math.round(flight.barometricAltitude).toLocaleString('da-DK') + ' m'
+                        : '—'"
                       ></span>
                       <span
                         class="flight-state"

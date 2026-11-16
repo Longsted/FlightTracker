@@ -21,8 +21,29 @@ export default () => {
     searchResults: [],
     searchPerformed: false,
 
+    //flight filters
+    originCountry: "",
+    minAltitude: "",
+    maxAltitude: "",
+    minVelocity: "",
+    maxVelocity: "",
+    onGround: "",
+    visibleAreaOnly: false,
+    filteredFlights: [],
+    filtersApplied: false,
+
+    filterTimeout: null,
+
     get displayedFlights() {
-      return this.searchPerformed ? this.searchResults : this.flights;
+      if (this.searchPerformed) {
+        return this.searchResults;
+      }
+
+      if (this.filtersApplied) {
+        return this.filteredFlights;
+      }
+
+      return this.flights;
     },
 
     async init() {
@@ -89,6 +110,61 @@ export default () => {
 
     clearSelectedFlight() {
       this.selectedFlight = null;
+    },
+
+    scheduleFilterUpdate() {
+      clearTimeout(this.filterTimeout);
+
+      this.filterTimeout = setTimeout(() => {
+        this.applyFilters();
+      }, 300);
+    },
+
+    async applyFilters() {
+      const filters = {
+        originCountry: this.originCountry,
+        minAltitude: this.minAltitude,
+        maxAltitude: this.maxAltitude,
+        minVelocity: this.minVelocity,
+        maxVelocity: this.maxVelocity,
+        onGround: this.onGround === "" ? "" : this.onGround === "true",
+      };
+
+      try {
+        const results = await dashboardService.filterFlights(filters);
+
+        if (results !== null) {
+          this.filteredFlights = results;
+          this.filtersApplied = true;
+        }
+      } catch (error) {
+        console.error("Failed to filter flights", error);
+      }
+    },
+    clearFilters() {
+      clearTimeout(this.filterTimeout);
+      this.filterTimeout = null;
+
+      this.originCountry = "";
+      this.minAltitude = "";
+      this.maxAltitude = "";
+      this.minVelocity = "";
+      this.maxVelocity = "";
+      this.onGround = "";
+      this.visibleAreaOnly = false;
+      this.filteredFlights = [];
+      this.filtersApplied = false;
+
+      dashboardService.clearFilters();
+    },
+    get availableCountries() {
+      return [
+        ...new Set(
+          this.flights
+            .map((flight) => flight.originCountry)
+            .filter((country) => country),
+        ),
+      ].sort();
     },
   };
 };
