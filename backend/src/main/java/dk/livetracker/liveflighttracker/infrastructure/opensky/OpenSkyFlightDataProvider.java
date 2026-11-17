@@ -37,7 +37,7 @@ public class OpenSkyFlightDataProvider implements FlightDataProvider {
     List<List<Object>> states = response.states();
 
     if (states == null) {
-      return List.of();
+      throw new FlightDataProviderException("Opensky response contained no state data.");
     }
     List<Flight> flights = new ArrayList<>();
     for (List<Object> state : states) {

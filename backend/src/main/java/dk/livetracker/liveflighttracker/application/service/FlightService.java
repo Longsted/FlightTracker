@@ -1,9 +1,10 @@
 package dk.livetracker.liveflighttracker.application.service;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightDataStatus;
 import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
 import dk.livetracker.liveflighttracker.application.filter.FlightFiltering;
 import dk.livetracker.liveflighttracker.application.interfaces.FlightDataProvider;
-import dk.livetracker.liveflighttracker.application.interfaces.FlightSnapshotStore;
+import dk.livetracker.liveflighttracker.application.interfaces.FlightDataStore;
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.util.List;
 import java.util.Locale;
@@ -13,25 +14,33 @@ import org.springframework.stereotype.Service;
 public class FlightService {
 
   private final FlightDataProvider flightDataProvider;
-  private final FlightSnapshotStore flightSnapshotStore;
+  private final FlightDataStore flightDataStore;
   private final FlightFiltering flightFiltering;
 
   public FlightService(
       FlightDataProvider flightDataProvider,
-      FlightSnapshotStore flightSnapshotStore,
+      FlightDataStore flightDataStore,
       FlightFiltering flightFiltering) {
     this.flightDataProvider = flightDataProvider;
-    this.flightSnapshotStore = flightSnapshotStore;
+    this.flightDataStore = flightDataStore;
     this.flightFiltering = flightFiltering;
   }
 
   public List<Flight> getCurrentFlights() {
-    return flightSnapshotStore.getSnapshot().stream().filter(Flight::hasValidPosition).toList();
+    return flightDataStore.getSnapshot().stream().filter(Flight::hasValidPosition).toList();
   }
 
   public void refreshFlights() {
-    List<Flight> flights = flightDataProvider.getCurrentFlights();
-    flightSnapshotStore.updateSnapshot(flights);
+    try {
+      List<Flight> flights = flightDataProvider.getCurrentFlights();
+      flightDataStore.updateSnapshot(flights);
+      flightDataStore.recordRefreshSuccess();
+    } catch (RuntimeException e) {
+      {
+        flightDataStore.recordRefreshFailure();
+        throw e;
+      }
+    }
   }
 
   public List<Flight> searchFlights(String query) {
@@ -58,5 +67,9 @@ public class FlightService {
 
   private boolean containsIgnoreCase(String value, String searchTerm) {
     return value != null && value.toLowerCase(Locale.ROOT).contains(searchTerm);
+  }
+
+  public FlightDataStatus getFlightDataStatus() {
+    return flightDataStore.getStatus();
   }
 }
