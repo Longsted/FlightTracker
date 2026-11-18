@@ -131,7 +131,7 @@ test("continues updating flights after a failed API request", async ({
   await expect.poll(getRequestCount).toBe(2);
 
   await expect(page.locator("header p")).toHaveText(
-      "Unable to retrieve latest flight data. Showing previous data.",
+    "Unable to retrieve latest flight data. Showing previous data.",
   );
 
   // The existing marker should still be interactive after the error.

@@ -49,7 +49,7 @@ test("displays error message when API returns HTTP 500", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.locator("header p")).toHaveText(
-      "Flight data is currently unavailable",
+    "Flight data is currently unavailable",
   );
 
   await expect(page.locator("#flight-map")).toBeVisible();
