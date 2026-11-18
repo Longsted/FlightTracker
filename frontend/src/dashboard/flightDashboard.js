@@ -73,6 +73,11 @@ export default () => {
       } catch (error) {
         console.error("Failed to retrieve flights", error);
         this.statusMessage = "Could not retrieve flight data";
+
+        this.statusMessage =
+          this.flights.length > 0
+            ? "Unable to retrieve latest flight data. Showing previous data."
+            : "Flight data is currently unavailable";
       }
     },
 
