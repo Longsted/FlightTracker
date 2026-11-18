@@ -20,6 +20,11 @@ export async function searchFlights(query) {
   return handleResponse(response);
 }
 
+export async function getFlightStatus() {
+  const response = await fetch(`${API_BASE_URL}/status`);
+  return handleResponse(response);
+}
+
 export async function filterFlights(filters, signal) {
   const params = new URLSearchParams();
 

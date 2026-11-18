@@ -1,15 +1,13 @@
 package dk.livetracker.liveflighttracker.application.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightDataStatus;
 import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
 import dk.livetracker.liveflighttracker.application.filter.FlightFiltering;
 import dk.livetracker.liveflighttracker.application.interfaces.FlightDataProvider;
-import dk.livetracker.liveflighttracker.application.interfaces.FlightSnapshotStore;
+import dk.livetracker.liveflighttracker.application.interfaces.FlightDataStore;
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.time.Instant;
 import java.util.List;
@@ -19,14 +17,14 @@ import org.junit.jupiter.api.Test;
 class FlightServiceTest {
 
   private FlightDataProvider provider;
-  private FlightSnapshotStore snapshotStore;
+  private FlightDataStore snapshotStore;
   private FlightService service;
   private FlightFiltering flightFiltering;
 
   @BeforeEach
   void setUp() {
     provider = mock(FlightDataProvider.class);
-    snapshotStore = mock(FlightSnapshotStore.class);
+    snapshotStore = mock(FlightDataStore.class);
     flightFiltering = mock(FlightFiltering.class);
     service = new FlightService(provider, snapshotStore, flightFiltering);
   }
@@ -77,6 +75,8 @@ class FlightServiceTest {
     // Then
     verify(provider).getCurrentFlights();
     verify(snapshotStore).updateSnapshot(flights);
+    verify(snapshotStore).recordRefreshSuccess();
+    verify(snapshotStore, never()).recordRefreshFailure();
   }
 
   @Test
@@ -85,10 +85,11 @@ class FlightServiceTest {
     when(provider.getCurrentFlights()).thenThrow(new RuntimeException("Provider unavailable"));
 
     // When & Then
-    org.junit.jupiter.api.Assertions.assertThrows(
-        RuntimeException.class, () -> service.refreshFlights());
+    assertThrows(RuntimeException.class, () -> service.refreshFlights());
 
-    org.mockito.Mockito.verifyNoInteractions(snapshotStore);
+    verify(snapshotStore).recordRefreshFailure();
+    verify(snapshotStore, never()).updateSnapshot(anyList());
+    verify(snapshotStore, never()).recordRefreshSuccess();
   }
 
   @Test
@@ -214,5 +215,22 @@ class FlightServiceTest {
         250.0,
         180.0,
         0.0);
+  }
+
+  @Test
+  void getFlightDataStatusReturnsStatusFromStore() {
+    // Given
+    FlightDataStatus expectedStatus =
+        new FlightDataStatus(
+            true, Instant.parse("2026-11-17T12:00:00Z"), Instant.parse("2026-11-17T12:00:00Z"));
+
+    when(snapshotStore.getStatus()).thenReturn(expectedStatus);
+
+    // When
+    FlightDataStatus actualStatus = service.getFlightDataStatus();
+
+    // Then
+    assertEquals(expectedStatus, actualStatus);
+    verify(snapshotStore).getStatus();
   }
 }

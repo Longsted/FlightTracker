@@ -106,16 +106,13 @@ public class OpenSkyFlightDataProviderTest {
   }
 
   @Test
-  void getCurrentFlights_returnsEmptyListWhenStatesIsNull() {
+  void getCurrentFlights_throwsExceptionWhenStatesIsNull() {
     // given
     OpenSkyStatesResponse response = new OpenSkyStatesResponse(123456L, null);
     when(openSkyClientMock.getCurrentStates()).thenReturn(response);
 
-    // when
-    List<Flight> result = provider.getCurrentFlights();
-
     // then
-    assertEquals(List.of(), result);
+    assertThrows(FlightDataProviderException.class, () -> provider.getCurrentFlights());
   }
 
   @Test

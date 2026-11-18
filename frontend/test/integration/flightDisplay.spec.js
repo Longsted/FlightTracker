@@ -49,7 +49,7 @@ test("displays error message when API returns HTTP 500", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.locator("header p")).toHaveText(
-    "Could not retrieve flight data",
+    "Flight data is currently unavailable",
   );
 
   await expect(page.locator("#flight-map")).toBeVisible();
@@ -81,4 +81,47 @@ test("displays flight marker at its geographic position", async ({ page }) => {
   await expect(flightDetail(page, "vertical-speed")).toHaveText("0 m/s");
   await expect(flightDetail(page, "longitude")).toHaveText("10.5");
   await expect(flightDetail(page, "latitude")).toHaveText("56");
+});
+
+// ===============================================
+// US4 - Handle errors when retrieving flight data
+// ===============================================
+
+test("preserves previous flight data when API refresh fails", async ({
+  page,
+}) => {
+  // Given: The API initially returns one flight,
+  // but the next request will fail with HTTP 500.
+  const flight = createFlight({
+    callsign: "PRESERVED123",
+  });
+
+  await mockFlightApi(page, {
+    snapshots: [{ flights: [flight] }, { status: 500 }],
+  });
+
+  await page.goto("/");
+
+  await expect(page.locator("header p")).toHaveText("Showing 1 flights");
+
+  await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
+
+  // When: The dashboard attempts to refresh flight data.
+  await page.evaluate(async () => {
+    const element = document.querySelector('[x-data="flightDashboard"]');
+
+    const dashboard = window.Alpine.$data(element);
+
+    await dashboard.refreshFlights();
+  });
+
+  // Then: The previous flight data is preserved
+  // and the dashboard displays an appropriate error message.
+  await expect(page.locator("header p")).toHaveText(
+    "Unable to retrieve latest flight data. Showing previous data.",
+  );
+
+  await expect(page.locator(".flight-list-item")).toHaveCount(1);
+
+  await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
 });

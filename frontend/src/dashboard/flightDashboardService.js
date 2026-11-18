@@ -8,6 +8,14 @@ export default class FlightDashboardService {
   async refreshFlights(selectedFlight, mapInitialized) {
     const flights = await this.flightApi.getFlights();
 
+    let flightStatus = null;
+
+    try {
+      flightStatus = await this.flightApi.status();
+    } catch (error) {
+      console.error("Failed to retrieve flight data status", error);
+    }
+
     if (!mapInitialized) {
       this.flightMap.createFlightMap(flights);
       mapInitialized = true;
@@ -21,10 +29,20 @@ export default class FlightDashboardService {
         null;
     }
 
-    const statusMessage =
-      flights.length === 0
-        ? "No flights currently available"
-        : `Showing ${flights.length} flights`;
+    let statusMessage;
+
+    if (flightStatus && !flightStatus.available) {
+      if (flightStatus.lastSuccessfulUpdate) {
+        statusMessage =
+          "Unable to retrieve latest flight data. Showing previous data.";
+      } else {
+        statusMessage = "Flight data is currently unavailable";
+      }
+    } else if (flights.length === 0) {
+      statusMessage = "No flights currently available";
+    } else {
+      statusMessage = `Showing ${flights.length} flights`;
+    }
 
     return {
       flights,

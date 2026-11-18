@@ -1,6 +1,9 @@
 
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
@@ -70,7 +73,7 @@ jobs:
       - name: Run frontend unit tests
         run: npm run test:unit
 
-      - name: Run frontend E2E tests
+      - name: Run frontend integration and E2E tests
         run: npm run test:e2e
 
       - name: Build frontend

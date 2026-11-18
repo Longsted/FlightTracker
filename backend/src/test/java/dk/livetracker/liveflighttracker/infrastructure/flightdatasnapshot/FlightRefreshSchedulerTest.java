@@ -3,6 +3,7 @@ package dk.livetracker.liveflighttracker.infrastructure.flightdatasnapshot;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import dk.livetracker.liveflighttracker.application.service.FlightService;
@@ -44,5 +45,21 @@ class FlightRefreshSchedulerTest {
     assertDoesNotThrow(() -> scheduler.initialRefresh());
 
     verify(flightService).refreshFlights();
+  }
+
+  @Test
+  void scheduledRefreshRecoversAfterProviderFailure() {
+    // Given
+    doThrow(new FlightDataProviderException("Provider unavailable"))
+        .doNothing()
+        .when(flightService)
+        .refreshFlights();
+
+    // When
+    assertDoesNotThrow(() -> scheduler.scheduledRefresh());
+    assertDoesNotThrow(() -> scheduler.scheduledRefresh());
+
+    // Then
+    verify(flightService, times(2)).refreshFlights();
   }
 }

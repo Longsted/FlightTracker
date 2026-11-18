@@ -1,5 +1,6 @@
 package dk.livetracker.liveflighttracker.presentation.controller;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightDataStatus;
 import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
 import dk.livetracker.liveflighttracker.application.service.FlightService;
 import dk.livetracker.liveflighttracker.domain.Flight;
@@ -29,5 +30,10 @@ public class FlightController {
   @GetMapping("/filter")
   public List<Flight> filterFlights(@ModelAttribute FlightFilter filter) {
     return flightService.filterFlights(filter);
+  }
+
+  @GetMapping("/status")
+  public FlightDataStatus getFlightDataStatus() {
+    return flightService.getFlightDataStatus();
   }
 }

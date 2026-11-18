@@ -19,9 +19,16 @@ describe("flightDashboardService", () => {
   beforeEach(() => {
     flightApi = {
       getFlights: vi.fn(),
+      status: vi.fn(),
       searchFlights: vi.fn(),
       filterFlights: vi.fn(),
     };
+
+    flightApi.status.mockResolvedValue({
+      available: true,
+      lastAttempt: "2026-11-17T10:00:00Z",
+      lastSuccessfulUpdate: "2026-11-17T10:00:00Z",
+    });
 
     flightMap = {
       createFlightMap: vi.fn(),
@@ -100,6 +107,68 @@ describe("flightDashboardService", () => {
       await expect(service.refreshFlights(null, false)).rejects.toThrow(
         "API unavailable",
       );
+    });
+
+    it("shows a warning when flight data is unavailable but previous data exists", async () => {
+      flightApi.getFlights.mockResolvedValue([flight1]);
+
+      flightApi.status.mockResolvedValue({
+        available: false,
+        lastAttempt: "2026-11-17T10:00:00Z",
+        lastSuccessfulUpdate: "2026-11-17T09:55:00Z",
+      });
+
+      const result = await service.refreshFlights(null, true);
+
+      expect(result.statusMessage).toBe(
+        "Unable to retrieve latest flight data. Showing previous data.",
+      );
+
+      expect(flightMap.updateFlights).toHaveBeenCalledWith([flight1]);
+    });
+
+    it("shows unavailable message when no previous flight data exists", async () => {
+      flightApi.getFlights.mockResolvedValue([]);
+
+      flightApi.status.mockResolvedValue({
+        available: false,
+        lastAttempt: "2026-11-17T10:00:00Z",
+        lastSuccessfulUpdate: null,
+      });
+
+      const result = await service.refreshFlights(null, true);
+
+      expect(result.statusMessage).toBe("Flight data is currently unavailable");
+
+      expect(flightMap.updateFlights).toHaveBeenCalledWith([]);
+    });
+    it("shows unavailable message when no previous flight data exists", async () => {
+      flightApi.getFlights.mockResolvedValue([]);
+
+      flightApi.status.mockResolvedValue({
+        available: false,
+        lastAttempt: "2026-11-17T10:00:00Z",
+        lastSuccessfulUpdate: null,
+      });
+
+      const result = await service.refreshFlights(null, true);
+
+      expect(result.statusMessage).toBe("Flight data is currently unavailable");
+
+      expect(flightMap.updateFlights).toHaveBeenCalledWith([]);
+    });
+    it("continues updating flights when status endpoint fails", async () => {
+      flightApi.getFlights.mockResolvedValue([flight1]);
+
+      flightApi.status.mockRejectedValue(
+        new Error("Status endpoint unavailable"),
+      );
+
+      const result = await service.refreshFlights(null, true);
+
+      expect(result.flights).toEqual([flight1]);
+      expect(result.statusMessage).toBe("Showing 1 flights");
+      expect(flightMap.updateFlights).toHaveBeenCalledWith([flight1]);
     });
   });
 

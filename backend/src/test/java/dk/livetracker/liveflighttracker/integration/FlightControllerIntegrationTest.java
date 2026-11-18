@@ -1,12 +1,13 @@
-package dk.livetracker.liveflighttracker.presentation.controller;
+package dk.livetracker.liveflighttracker.integration;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dk.livetracker.liveflighttracker.application.dto.FlightDataStatus;
 import dk.livetracker.liveflighttracker.application.interfaces.FlightDataProvider;
-import dk.livetracker.liveflighttracker.application.interfaces.FlightSnapshotStore;
+import dk.livetracker.liveflighttracker.application.interfaces.FlightDataStore;
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.time.Instant;
 import java.util.List;
@@ -23,7 +24,7 @@ class FlightControllerIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockitoBean private FlightSnapshotStore snapshotStore;
+  @MockitoBean private FlightDataStore snapshotStore;
 
   @MockitoBean private FlightDataProvider flightDataProvider;
 
@@ -189,5 +190,30 @@ class FlightControllerIntegrationTest {
         250.0,
         180.0,
         0.0);
+  }
+
+  @Test
+  void getFlightDataStatusReturnsCurrentStatus() throws Exception {
+    // Given
+    Instant timestamp = Instant.parse("2026-11-17T10:00:00Z");
+
+    FlightDataStatus expectedStatus = new FlightDataStatus(true, timestamp, timestamp);
+
+    when(snapshotStore.getStatus()).thenReturn(expectedStatus);
+
+    // When & Then
+    mockMvc
+        .perform(get("/api/flights/status"))
+        .andExpect(status().isOk())
+        .andExpect(
+            content()
+                .json(
+                    """
+                    {
+                        "available": true,
+                        "lastAttempt": "2026-11-17T10:00:00Z",
+                        "lastSuccessfulUpdate": "2026-11-17T10:00:00Z"
+                    }
+                    """));
   }
 }
