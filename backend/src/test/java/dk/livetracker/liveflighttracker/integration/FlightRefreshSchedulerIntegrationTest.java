@@ -1,4 +1,4 @@
-package dk.livetracker.liveflighttracker.infrastructure.flightdatasnapshot;
+package dk.livetracker.liveflighttracker.integration;
 
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.timeout;

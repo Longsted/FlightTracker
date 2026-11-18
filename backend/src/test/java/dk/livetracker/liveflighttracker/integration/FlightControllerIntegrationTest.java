@@ -1,4 +1,4 @@
-package dk.livetracker.liveflighttracker.presentation.controller;
+package dk.livetracker.liveflighttracker.integration;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
