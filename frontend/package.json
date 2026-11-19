@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "alpinejs": "^3.17.5",
-    "bootstrap": "^5.3.8",
+    "bootstrap": "^5.3.9",
     "ol": "^10.11.0"
   },
   "devDependencies": {
