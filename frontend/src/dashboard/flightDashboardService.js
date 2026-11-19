@@ -11,7 +11,7 @@ export default class FlightDashboardService {
     let flightStatus = null;
 
     try {
-      flightStatus = await this.flightApi.status();
+      flightStatus = await this.flightApi.getFlightStatus();
     } catch (error) {
       console.error("Failed to retrieve flight data status", error);
     }
