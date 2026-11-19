@@ -137,6 +137,17 @@ export async function mockFlightApi(
     });
   });
 
+  await page.route("**/api/flights/status**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        available: true,
+        lastAttempt: "2026-11-19T10:00:00Z",
+        lastSuccessfulUpdate: "2026-11-19T10:00:00Z",
+      }),
+    });
+  });
   return () => requestCount;
 }
 
