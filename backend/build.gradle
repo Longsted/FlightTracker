@@ -26,6 +26,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 }
 
 tasks.named('test') {
@@ -56,4 +57,7 @@ spotless{
 }
 tasks.named('check'){
 	dependsOn('spotlessCheck')
+}
+tasks.named('bootJar') {
+	archiveFileName = 'app.jar'
 }

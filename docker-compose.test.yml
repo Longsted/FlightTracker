@@ -1,0 +1,18 @@
+services:
+  backend:
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend
+          ignore:
+            - build/
+            - .gradle/
+
+  frontend:
+    develop:
+      watch:
+        - action: rebuild
+          path: ./frontend
+          ignore:
+            - node_modules/
+            - dist/
