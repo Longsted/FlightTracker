@@ -1,0 +1,11 @@
+node_modules
+dist
+playwright-report
+test-results
+.gitignore
+test
+playwright.config.js
+eslint.config.js
+.git
+.vscode
+.idea

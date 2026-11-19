@@ -177,13 +177,25 @@ test("deselects flight when clicking empty map area", async ({ page }) => {
 
   await expect(flightDetailsContent(page)).toBeVisible();
 
-  // Click an empty area away from the selected marker.
-  const bounds = await page.locator("#flight-map").boundingBox();
+  const viewport = page.locator("#flight-map .ol-viewport");
+  const bounds = await viewport.boundingBox();
 
-  await page.mouse.click(
-    bounds.x + bounds.width / 2 + 100,
-    bounds.y + bounds.height / 2 + 100,
-  );
+  // Find a visible point inside the map viewport, away from the marker.
+  const clickPosition = {
+    x: bounds.x + 100,
+    y: bounds.y + 100,
+  };
+
+  const hitTest = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    const mapViewport = document.querySelector("#flight-map .ol-viewport");
+
+    return mapViewport?.contains(element) ?? false;
+  }, clickPosition);
+
+  expect(hitTest).toBe(true);
+
+  await page.mouse.click(clickPosition.x, clickPosition.y);
 
   await expect(flightDetailsContent(page)).toBeHidden();
 });

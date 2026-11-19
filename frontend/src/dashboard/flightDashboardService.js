@@ -10,17 +10,16 @@ export default class FlightDashboardService {
 
     let flightStatus = null;
 
-    try {
-      flightStatus = await this.flightApi.status();
-    } catch (error) {
-      console.error("Failed to retrieve flight data status", error);
-    }
-
     if (!mapInitialized) {
       this.flightMap.createFlightMap(flights);
       mapInitialized = true;
     } else {
       this.flightMap.updateFlights(flights);
+    }
+    try {
+      flightStatus = await this.flightApi.getFlightStatus();
+    } catch (error) {
+      console.error("Failed to retrieve flight data status", error);
     }
 
     if (selectedFlight) {

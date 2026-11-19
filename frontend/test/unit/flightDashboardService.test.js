@@ -19,12 +19,12 @@ describe("flightDashboardService", () => {
   beforeEach(() => {
     flightApi = {
       getFlights: vi.fn(),
-      status: vi.fn(),
+      getFlightStatus: vi.fn(),
       searchFlights: vi.fn(),
       filterFlights: vi.fn(),
     };
 
-    flightApi.status.mockResolvedValue({
+    flightApi.getFlightStatus.mockResolvedValue({
       available: true,
       lastAttempt: "2026-11-17T10:00:00Z",
       lastSuccessfulUpdate: "2026-11-17T10:00:00Z",
@@ -112,7 +112,7 @@ describe("flightDashboardService", () => {
     it("shows a warning when flight data is unavailable but previous data exists", async () => {
       flightApi.getFlights.mockResolvedValue([flight1]);
 
-      flightApi.status.mockResolvedValue({
+      flightApi.getFlightStatus.mockResolvedValue({
         available: false,
         lastAttempt: "2026-11-17T10:00:00Z",
         lastSuccessfulUpdate: "2026-11-17T09:55:00Z",
@@ -130,7 +130,7 @@ describe("flightDashboardService", () => {
     it("shows unavailable message when no previous flight data exists", async () => {
       flightApi.getFlights.mockResolvedValue([]);
 
-      flightApi.status.mockResolvedValue({
+      flightApi.getFlightStatus.mockResolvedValue({
         available: false,
         lastAttempt: "2026-11-17T10:00:00Z",
         lastSuccessfulUpdate: null,
@@ -142,25 +142,11 @@ describe("flightDashboardService", () => {
 
       expect(flightMap.updateFlights).toHaveBeenCalledWith([]);
     });
-    it("shows unavailable message when no previous flight data exists", async () => {
-      flightApi.getFlights.mockResolvedValue([]);
 
-      flightApi.status.mockResolvedValue({
-        available: false,
-        lastAttempt: "2026-11-17T10:00:00Z",
-        lastSuccessfulUpdate: null,
-      });
-
-      const result = await service.refreshFlights(null, true);
-
-      expect(result.statusMessage).toBe("Flight data is currently unavailable");
-
-      expect(flightMap.updateFlights).toHaveBeenCalledWith([]);
-    });
     it("continues updating flights when status endpoint fails", async () => {
       flightApi.getFlights.mockResolvedValue([flight1]);
 
-      flightApi.status.mockRejectedValue(
+      flightApi.getFlightStatus.mockRejectedValue(
         new Error("Status endpoint unavailable"),
       );
 

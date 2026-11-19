@@ -75,6 +75,7 @@ body {
 }
 
 .tracker-main {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -94,18 +95,6 @@ body {
   min-height: 0;
   flex: 1;
   transition: grid-template-columns 0.2s ease;
-}
-
-.workspace.left-panel-closed {
-  grid-template-columns: 0 minmax(0, 1fr) minmax(220px, 260px);
-}
-
-.workspace.right-panel-closed {
-  grid-template-columns: minmax(245px, 290px) minmax(0, 1fr) 0;
-}
-
-.workspace.left-panel-closed.right-panel-closed {
-  grid-template-columns: 0 minmax(0, 1fr) 0;
 }
 
 .side-panel,
@@ -204,6 +193,12 @@ body {
   color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 600;
+  .flight-list {
+    flex: 0 0 auto;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 .flight-filters .form-control,
@@ -217,10 +212,10 @@ body {
 
 /* Flight list fills the remaining panel height */
 .flight-list {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: auto;
   max-height: none;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .flight-list-item {
@@ -401,6 +396,12 @@ body {
 
 /* Selected flight details */
 .details-panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  flex: 0 0 auto;
   padding: 0;
   overflow: hidden;
 }
@@ -555,6 +556,8 @@ body {
 }
 .flight-list-panel {
   grid-column: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .map-workspace {
