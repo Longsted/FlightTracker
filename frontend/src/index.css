@@ -6,7 +6,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-
   --tracker-bg: #f4f7fb;
   --panel-bg: #ffffff;
   --panel-border: #e4eaf1;
@@ -76,23 +75,26 @@ body {
 }
 
 .tracker-main {
-    position: relative;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 12px;
-    min-height: 0;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  min-height: 0;
 }
 
 /* Main three-column workspace */
 .workspace {
-    display: grid;
-    grid-template-columns: minmax(245px, 290px) minmax(0, 1fr) minmax(220px, 260px);
-    gap: 12px;
-    min-height: 0;
-    flex: 1;
-    transition: grid-template-columns 0.2s ease;
+  display: grid;
+  grid-template-columns: minmax(245px, 290px) minmax(0, 1fr) minmax(
+      220px,
+      260px
+    );
+  gap: 12px;
+  min-height: 0;
+  flex: 1;
+  transition: grid-template-columns 0.2s ease;
 }
 
 .side-panel,
@@ -190,12 +192,13 @@ body {
   margin-bottom: 4px;
   color: var(--text-muted);
   font-size: 0.8rem;
-  font-weight: 600;.flight-list {
+  font-weight: 600;
+  .flight-list {
     flex: 0 0 auto;
     min-height: auto;
     max-height: none;
     overflow: visible;
-}
+  }
 }
 
 .flight-filters .form-control,
@@ -209,10 +212,10 @@ body {
 
 /* Flight list fills the remaining panel height */
 .flight-list {
-    flex: 0 0 auto;
-    min-height: auto;
-    max-height: none;
-    overflow: visible;
+  flex: 0 0 auto;
+  min-height: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .flight-list-item {
@@ -393,14 +396,14 @@ body {
 
 /* Selected flight details */
 .details-panel {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    z-index: 3;
-    flex: 0 0 auto;
-    padding: 0;
-    overflow: hidden;
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  flex: 0 0 auto;
+  padding: 0;
+  overflow: hidden;
 }
 
 .details-heading {
@@ -413,10 +416,10 @@ body {
 }
 
 .details-content {
-    display: grid;
-    grid-template-columns: 1.1fr 1.2fr 0.8fr 1fr;
-    gap: 12px;
-    padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr 0.8fr 1fr;
+  gap: 12px;
+  padding: 12px 16px;
 }
 
 .detail-group {
@@ -552,9 +555,9 @@ body {
   }
 }
 .flight-list-panel {
-    grid-column: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+  grid-column: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .map-workspace {
