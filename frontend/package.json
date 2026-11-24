@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "alpinejs": "^3.17.5",
-    "bootstrap": "^5.3.8",
+    "bootstrap": "^5.3.9",
     "ol": "^10.11.0"
   },
   "devDependencies": {
@@ -28,7 +28,7 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
-    "vite": "^8.3.7",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
 }
