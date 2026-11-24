@@ -113,8 +113,8 @@ jobs:
       - name: build frontend image
         run: docker build -t flighttracker-frontend:${{ github.sha }} ./frontend
 
-      - name: Start backend container
-        run: docker run -d --name backend-test -p 8080:8080 flighttracker-backend:${{ github.sha }}
+      - name: Start containers
+        run: IMAGE_TAG=${{ github.sha }} docker compose up -d --no-build
 
       - name: Check backend health
         run: |
@@ -129,15 +129,14 @@ jobs:
           done
 
           echo "Backend failed health check"
-          docker logs backend-test
+          docker compose logs backend
           exit 1
-      - name: Start frontend container
-        run: docker run -d --name frontend-test -p 3000:80 flighttracker-frontend:${{ github.sha }}
+     
 
       - name: Check frontend health
         run: |
           for i in {1..30}; do
-            if curl -fsS http://localhost:3000/health; then
+            if curl -fsS http://localhost/health; then
               echo "Frontend is healthy!"
               exit 0
             fi
@@ -147,19 +146,34 @@ jobs:
           done
 
           echo "Frontend failed health check"
-          docker logs frontend-test
+          docker compose logs frontend
           exit 1
 
       - name: Stop containers
         if: always()
-        run: |
-          docker stop frontend-test || true
-          docker stop backend-test || true
+        run: docker compose down
 
       - name: Login to Github Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag images for GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}
+          
+          docker tag flighttracker-backend:${{ github.sha }} $IMAGE_PREFIX/backend:${{ github.sha }}
+          docker tag flighttracker-frontend:${{ github.sha }} $IMAGE_PREFIX/frontend:${{ github.sha }}
+
+      - name: Push images to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}
+
+          docker push $IMAGE_PREFIX/backend:${{ github.sha }}
+          docker push $IMAGE_PREFIX/frontend:${{ github.sha }}
 
