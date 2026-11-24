@@ -118,7 +118,7 @@ jobs:
 
       - name: Check backend health
         run: |
-          for i in {1..30}; do
+          for _ in {1..30}; do
             if curl -fsS http://localhost:8080/actuator/health; then
               echo "Backend is healthy!"
               exit 0
@@ -135,7 +135,7 @@ jobs:
 
       - name: Check frontend health
         run: |
-          for i in {1..30}; do
+          for _ in {1..30}; do
             if curl -fsS http://localhost/health; then
               echo "Frontend is healthy!"
               exit 0
@@ -155,7 +155,7 @@ jobs:
 
       - name: Login to Github Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -164,16 +164,16 @@ jobs:
       - name: Tag images for GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          IMAGE_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}
+          IMAGE_PREFIX="ghcr.io/${GITHUB_REPOSITORY,,}"
           
-          docker tag flighttracker-backend:${{ github.sha }} $IMAGE_PREFIX/backend:${{ github.sha }}
-          docker tag flighttracker-frontend:${{ github.sha }} $IMAGE_PREFIX/frontend:${{ github.sha }}
+          docker tag flighttracker-backend:${{ github.sha }} "$IMAGE_PREFIX/backend:${{ github.sha }}"
+          docker tag flighttracker-frontend:${{ github.sha }} "$IMAGE_PREFIX/frontend:${{ github.sha }}"
 
       - name: Push images to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          IMAGE_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}
+          IMAGE_PREFIX="ghcr.io/${GITHUB_REPOSITORY,,}"
 
-          docker push $IMAGE_PREFIX/backend:${{ github.sha }}
-          docker push $IMAGE_PREFIX/frontend:${{ github.sha }}
+          docker push "$IMAGE_PREFIX/backend:${{ github.sha }}"
+          docker push "$IMAGE_PREFIX/frontend:${{ github.sha }}"
 
