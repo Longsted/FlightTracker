@@ -21,6 +21,8 @@ services:
 
   frontend:
     image: ${REGISTRY:-}flighttracker-frontend:${IMAGE_TAG:-local}
+    environment:
+      BACKEND_URL: http://backend:8080
     build: ./frontend
     restart: unless-stopped
     ports:
