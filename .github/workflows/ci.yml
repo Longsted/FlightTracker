@@ -107,11 +107,28 @@ jobs:
       - name: check out repository
         uses: actions/checkout@v7
 
-      - name: build backend image
-        run: docker build -t flighttracker-backend:${{ github.sha }} ./backend
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-      - name: build frontend image
-        run: docker build -t flighttracker-frontend:${{ github.sha }} ./frontend
+      - name: Build backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: flighttracker-backend:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          tags: flighttracker-frontend:${{ github.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
 
       - name: Start containers
         run: IMAGE_TAG=${{ github.sha }} docker compose up -d --no-build
