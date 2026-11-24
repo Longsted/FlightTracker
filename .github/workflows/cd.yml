@@ -1,0 +1,56 @@
+
+name: CD
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Commit SHA to deploy"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate image tag
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          if [[ ! "$IMAGE_TAG" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "Invalid commit SHA. Expected a 40-character SHA."
+            exit 1
+          fi
+
+      - name: Deploy backend
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          IMAGE_PREFIX="ghcr.io/${GITHUB_REPOSITORY,,}"
+          IMAGE="${IMAGE_PREFIX}/backend:${IMAGE_TAG}"
+
+          echo "Deploying backend image: ${IMAGE}"
+
+          curl --fail-with-body --silent --show-error --get \
+            --data-urlencode "imgURL=${IMAGE}" \
+            "$DEPLOY_HOOK"
+
+      - name: Deploy frontend
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          IMAGE_PREFIX="ghcr.io/${GITHUB_REPOSITORY,,}"
+          IMAGE="${IMAGE_PREFIX}/frontend:${IMAGE_TAG}"
+
+          echo "Deploying frontend image: ${IMAGE}"
+
+          curl --fail-with-body --silent --show-error --get \
+            --data-urlencode "imgURL=${IMAGE}" \
+            "$DEPLOY_HOOK"
