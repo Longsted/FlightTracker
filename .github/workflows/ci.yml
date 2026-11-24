@@ -11,6 +11,18 @@ on:
       - main
 
 jobs:
+
+  workflow-lint:
+    name: Lint workflow files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
+
   build-and-test:
     name: Build and test backend
     runs-on: ubuntu-latest
@@ -83,6 +95,7 @@ jobs:
     name: Build Docker images
     runs-on: ubuntu-latest
     needs:
+      - workflow-lint
       - build-and-test
       - frontend
 
@@ -100,26 +113,48 @@ jobs:
       - name: build frontend image
         run: docker build -t flighttracker-frontend:${{ github.sha }} ./frontend
 
-      - name: start backend container
-        run: docker run -d -p 8080:8080 flghttracker-backend:${{ github.sha }}
-
       - name: Start backend container
-        run: docker run -d -p 8080:8080 flighttracker-backen:${{ github.sha }}
+        run: docker run -d --name backend-test -p 8080:8080 flighttracker-backend:${{ github.sha }}
 
       - name: Check backend health
-        run:  |
+        run: |
           for i in {1..30}; do
-            if curl -fsS https://localhost:8080/actuator/health; then
-            echo "Backend is healthy!"
-            exit 0
-          fi
-        
-          echo "waiting for backend..."
-          sleep 2
-         done
-        
-         echo "backend failed health check"
-         exit 1
+            if curl -fsS http://localhost:8080/actuator/health; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+
+            echo "Waiting for backend..."
+            sleep 2
+          done
+
+          echo "Backend failed health check"
+          docker logs backend-test
+          exit 1
+      - name: Start frontend container
+        run: docker run -d --name frontend-test -p 3000:80 flighttracker-frontend:${{ github.sha }}
+
+      - name: Check frontend health
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3000/health; then
+              echo "Frontend is healthy!"
+              exit 0
+            fi
+
+            echo "Waiting for frontend..."
+            sleep 2
+          done
+
+          echo "Frontend failed health check"
+          docker logs frontend-test
+          exit 1
+
+      - name: Stop containers
+        if: always()
+        run: |
+          docker stop frontend-test || true
+          docker stop backend-test || true
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
@@ -127,3 +162,4 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
