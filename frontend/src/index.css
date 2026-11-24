@@ -75,6 +75,7 @@ body {
 }
 
 .tracker-main {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -96,6 +97,7 @@ body {
   transition: grid-template-columns 0.2s ease;
 }
 
+/* Desktop panel collapse states */
 .workspace.left-panel-closed {
   grid-template-columns: 0 minmax(0, 1fr) minmax(220px, 260px);
 }
@@ -123,6 +125,20 @@ body {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+.flight-list-panel {
+  grid-column: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.map-workspace {
+  grid-column: 2;
+}
+
+.map-info-panel {
+  grid-column: 3;
 }
 
 .panel-heading {
@@ -217,10 +233,10 @@ body {
 
 /* Flight list fills the remaining panel height */
 .flight-list {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: auto;
   max-height: none;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .flight-list-item {
@@ -401,6 +417,12 @@ body {
 
 /* Selected flight details */
 .details-panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  flex: 0 0 auto;
   padding: 0;
   overflow: hidden;
 }
@@ -472,6 +494,14 @@ body {
   }
 
   .workspace.left-panel-closed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace.right-panel-closed {
+    grid-template-columns: minmax(220px, 270px) minmax(0, 1fr);
+  }
+
+  .workspace.left-panel-closed.right-panel-closed {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -551,26 +581,5 @@ body {
 
   .detail-group dl {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-.flight-list-panel {
-  grid-column: 1;
-}
-
-.map-workspace {
-  grid-column: 2;
-}
-
-.map-info-panel {
-  grid-column: 3;
-}
-@media (max-width: 1100px) {
-  .map-info-panel {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .workspace.left-panel-closed .map-workspace {
-    grid-column: 1;
   }
 }

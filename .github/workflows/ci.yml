@@ -11,6 +11,18 @@ on:
       - main
 
 jobs:
+
+  workflow-lint:
+    name: Lint workflow files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
+
   build-and-test:
     name: Build and test backend
     runs-on: ubuntu-latest
@@ -78,3 +90,107 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+  docker:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    needs:
+      - workflow-lint
+      - build-and-test
+      - frontend
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: flighttracker-backend:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          tags: flighttracker-frontend:${{ github.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      - name: Start containers
+        run: IMAGE_TAG=${{ github.sha }} docker compose up -d --no-build
+
+      - name: Check backend health
+        run: |
+          for _ in {1..30}; do
+            if curl -fsS http://localhost:8080/actuator/health; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+
+            echo "Waiting for backend..."
+            sleep 2
+          done
+
+          echo "Backend failed health check"
+          docker compose logs backend
+          exit 1
+     
+
+      - name: Check frontend health
+        run: |
+          for _ in {1..30}; do
+            if curl -fsS http://localhost/health; then
+              echo "Frontend is healthy!"
+              exit 0
+            fi
+
+            echo "Waiting for frontend..."
+            sleep 2
+          done
+
+          echo "Frontend failed health check"
+          docker compose logs frontend
+          exit 1
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down
+
+      - name: Login to Github Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag images for GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_PREFIX="ghcr.io/${GITHUB_REPOSITORY,,}"
+          
+          docker tag flighttracker-backend:${{ github.sha }} "$IMAGE_PREFIX/backend:${{ github.sha }}"
+          docker tag flighttracker-frontend:${{ github.sha }} "$IMAGE_PREFIX/frontend:${{ github.sha }}"
+
+      - name: Push images to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_PREFIX="ghcr.io/${GITHUB_REPOSITORY,,}"
+
+          docker push "$IMAGE_PREFIX/backend:${{ github.sha }}"
+          docker push "$IMAGE_PREFIX/frontend:${{ github.sha }}"
+
