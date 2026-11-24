@@ -78,3 +78,52 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+  docker:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    needs:
+      - build-and-test
+      - frontend
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: check out repository
+        uses: actions/checkout@v7
+
+      - name: build backend image
+        run: docker build -t flighttracker-backend:${{ github.sha }} ./backend
+
+      - name: build frontend image
+        run: docker build -t flighttracker-frontend:${{ github.sha }} ./frontend
+
+      - name: start backend container
+        run: docker run -d -p 8080:8080 flghttracker-backend:${{ github.sha }}
+
+      - name: Start backend container
+        run: docker run -d -p 8080:8080 flighttracker-backen:${{ github.sha }}
+
+      - name: Check backend health
+        run:  |
+          for i in {1..30}; do
+            if curl -fsS https://localhost:8080/actuator/health; then
+            echo "Backend is healthy!"
+            exit 0
+          fi
+        
+          echo "waiting for backend..."
+          sleep 2
+         done
+        
+         echo "backend failed health check"
+         exit 1
+
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
