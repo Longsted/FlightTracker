@@ -15,5 +15,8 @@ RUN npm run build
 #Run frontend
 FROM nginx:stable AS runtime
 
+ENV NGINX_ENVSUBST_FILTER=^BACKEND_URL$
+
+
 COPY --from=builder /app/dist/ /usr/share/nginx/html/
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
