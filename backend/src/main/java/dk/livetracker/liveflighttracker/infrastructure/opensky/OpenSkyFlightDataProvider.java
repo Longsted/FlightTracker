@@ -9,7 +9,6 @@ import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStates
 import dk.livetracker.liveflighttracker.infrastructure.opensky.mapper.OpenSkyStateVectorMapper;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
@@ -56,11 +55,12 @@ public class OpenSkyFlightDataProvider implements FlightDataProvider {
       Flight flight = mapper.toFlight(openSkyStateVector);
 
       flights.add(flight);
-
     }
-    if(invalidFlightCount > 0){
-      log.debug("Skipped {} malformed state vectors out of {} total states",
-              invalidFlightCount,states.size());
+    if (invalidFlightCount > 0) {
+      log.debug(
+          "Skipped {} malformed state vectors out of {} total states",
+          invalidFlightCount,
+          states.size());
     }
     return flights;
   }

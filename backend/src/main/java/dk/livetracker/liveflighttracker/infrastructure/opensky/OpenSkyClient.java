@@ -96,8 +96,11 @@ public class OpenSkyClient {
     if (response == null) {
       throw new FlightDataProviderException("OpenSky returned an empty response.");
     }
-    int sizeOfState = response.states() != null ? response.states().size(): 0;
-    log.debug("Retrieved {} aircraft states form Opensky (snapshot time: {}).",sizeOfState, response.time());
+    int sizeOfState = response.states() != null ? response.states().size() : 0;
+    log.debug(
+        "Retrieved {} aircraft states form Opensky (snapshot time: {}).",
+        sizeOfState,
+        response.time());
     return response;
   }
 }
