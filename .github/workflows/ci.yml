@@ -181,7 +181,7 @@ jobs:
           cache-to: type=gha,scope=frontend,mode=max
 
       - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: flighttracker-backend:${{ github.sha }}
           format: table
@@ -190,7 +190,7 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: flighttracker-frontend:${{ github.sha }}
           format: table
@@ -262,30 +262,4 @@ jobs:
 
           docker push "$IMAGE_PREFIX/backend:${{ github.sha }}"
           docker push "$IMAGE_PREFIX/frontend:${{ github.sha }}"
-
-  cleanup-ghcr:
-    name: Clean up old GHCR images
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs:
-      - docker
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    permissions:
-      packages: write
-
-    steps:
-      - name: Delete old backend image versions
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: ${{ github.event.repository.name }}/backend
-          package-type: container
-          min-versions-to-keep: 5
-
-      - name: Delete old frontend image versions
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: ${{ github.event.repository.name }}/frontend
-          package-type: container
-          min-versions-to-keep: 5
 
