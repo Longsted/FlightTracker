@@ -9,6 +9,8 @@ import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStates
 import dk.livetracker.liveflighttracker.infrastructure.opensky.mapper.OpenSkyStateVectorMapper;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Component;
 @Profile("!e2e")
 public class OpenSkyFlightDataProvider implements FlightDataProvider {
 
+  private static final Logger log = LoggerFactory.getLogger(OpenSkyFlightDataProvider.class);
   private final OpenSkyClient openSkyClient;
   private final OpenSkyStateVectorDecoder decoder;
   private final OpenSkyStateVectorMapper mapper;
@@ -40,16 +43,24 @@ public class OpenSkyFlightDataProvider implements FlightDataProvider {
       throw new FlightDataProviderException("Opensky response contained no state data.");
     }
     List<Flight> flights = new ArrayList<>();
+    int invalidFlightCount = 0;
     for (List<Object> state : states) {
       OpenSkyStateVector openSkyStateVector;
       try {
         openSkyStateVector = decoder.decode(state);
       } catch (FlightDataProviderException e) {
+        invalidFlightCount++;
         continue;
       }
       Flight flight = mapper.toFlight(openSkyStateVector);
 
       flights.add(flight);
+    }
+    if (invalidFlightCount > 0) {
+      log.debug(
+          "Skipped {} malformed state vectors out of {} total states",
+          invalidFlightCount,
+          states.size());
     }
     return flights;
   }

@@ -4,6 +4,8 @@ import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProvi
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyTokenResponse;
 import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -14,6 +16,7 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class OpenSkyClient {
 
+  private static final Logger log = LoggerFactory.getLogger(OpenSkyClient.class);
   private final RestClient restClient;
   private final OpenSkyProperties properties;
   private static final String TOKEN_URL =
@@ -29,6 +32,7 @@ public class OpenSkyClient {
   }
 
   private OpenSkyTokenResponse fetchAccessToken() {
+    log.debug("Requesting Oauth2 token from Opensky");
     MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
     formData.add("grant_type", "client_credentials");
 
@@ -56,7 +60,7 @@ public class OpenSkyClient {
         || response.expiresIn() <= 0) {
       throw new FlightDataProviderException("OpenSky returned an invalid token response.");
     }
-
+    log.info("succesfully retrieved Oauth2 token from Opensky");
     return response;
   }
 
@@ -92,6 +96,11 @@ public class OpenSkyClient {
     if (response == null) {
       throw new FlightDataProviderException("OpenSky returned an empty response.");
     }
+    int sizeOfState = response.states() != null ? response.states().size() : 0;
+    log.debug(
+        "Retrieved {} aircraft states form Opensky (snapshot time: {}).",
+        sizeOfState,
+        response.time());
     return response;
   }
 }

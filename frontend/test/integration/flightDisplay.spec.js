@@ -45,8 +45,26 @@ test("displays message when no flights are available", async ({ page }) => {
 });
 
 test("displays error message when API returns HTTP 500", async ({ page }) => {
-  await mockFlightApi(page, { status: 500 });
+  await page.clock.install();
+
+  const getRequestCount = await mockFlightApi(page, { status: 500 });
+
   await page.goto("/");
+
+  // Initial request fails.
+  await expect.poll(getRequestCount).toBe(1);
+
+  // First retry after 5 seconds.
+  await page.clock.runFor(5000);
+  await expect.poll(getRequestCount).toBe(2);
+
+  // Second retry after another 10 seconds.f
+  await page.clock.runFor(10000);
+  await expect.poll(getRequestCount).toBe(3);
+
+  // Third retry after another 15 seconds.
+  await page.clock.runFor(15000);
+  await expect.poll(getRequestCount).toBe(4);
 
   await expect(page.locator("header p")).toHaveText(
     "Flight data is currently unavailable",
@@ -91,13 +109,21 @@ test("preserves previous flight data when API refresh fails", async ({
   page,
 }) => {
   // Given: The API initially returns one flight,
-  // but the next request will fail with HTTP 500.
+  // but all subsequent requests fail with HTTP 500.
   const flight = createFlight({
     callsign: "PRESERVED123",
   });
 
+  await page.clock.install();
+
   await mockFlightApi(page, {
-    snapshots: [{ flights: [flight] }, { status: 500 }],
+    snapshots: [
+      { flights: [flight] },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+    ],
   });
 
   await page.goto("/");
@@ -107,13 +133,19 @@ test("preserves previous flight data when API refresh fails", async ({
   await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
 
   // When: The dashboard attempts to refresh flight data.
-  await page.evaluate(async () => {
+  const refreshPromise = page.evaluate(() => {
     const element = document.querySelector('[x-data="flightDashboard"]');
-
     const dashboard = window.Alpine.$data(element);
 
-    await dashboard.refreshFlights();
+    return dashboard.refreshFlights();
   });
+
+  // Wait for all four failed attempts.
+  await page.clock.runFor(5000);
+  await page.clock.runFor(10000);
+  await page.clock.runFor(15000);
+
+  await refreshPromise;
 
   // Then: The previous flight data is preserved
   // and the dashboard displays an appropriate error message.

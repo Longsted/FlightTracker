@@ -3,6 +3,7 @@ server {
     server_name _;
 
     location = /health {
+        access_log off;
         default_type text/plain;
         return 200 "healthy\n";
     }
@@ -23,5 +24,10 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+        #give backend container time to wake up render normally stops at 60 s
+        proxy_connect_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_read_timeout 75s;
     }
 }

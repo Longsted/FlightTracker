@@ -10,7 +10,6 @@ export default () => {
     selectedFlight: null,
     mapInitialized: false,
     flightPanelOpen: true,
-
     // Side panel visibility
     leftPanelOpen: true,
     rightPanelOpen: true,
@@ -33,6 +32,8 @@ export default () => {
     filtersApplied: false,
 
     filterTimeout: null,
+    isRefreshing: false,
+    pollInterval: null,
 
     get displayedFlights() {
       if (this.searchPerformed) {
@@ -52,16 +53,45 @@ export default () => {
         this.flightPanelOpen = true;
       });
 
-      await this.refreshFlights();
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          this.stopPolling();
+        } else {
+          this.refreshFlights();
+          this.startPolling();
+        }
+      });
+      console.info("Flight dashboard initialized");
 
-      setInterval(() => {
-        this.refreshFlights();
+      if (!document.hidden) {
+        this.startPolling();
+      }
+      await this.refreshFlights();
+    },
+    startPolling() {
+      this.stopPolling();
+      this.pollInterval = setInterval(() => {
+        if (!document.hidden) {
+          this.refreshFlights();
+        }
       }, 120000);
     },
 
+    stopPolling() {
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+    },
+
     async refreshFlights() {
+      if (this.isRefreshing) {
+        return;
+      }
+      this.isRefreshing = true;
+      console.groupCollapsed("refrshing flight data");
       try {
-        const result = await dashboardService.refreshFlights(
+        const result = await dashboardService.refreshFlightsWithRetry(
           this.selectedFlight,
           this.mapInitialized,
         );
@@ -70,14 +100,20 @@ export default () => {
         this.selectedFlight = result.selectedFlight;
         this.mapInitialized = result.mapInitialized;
         this.statusMessage = result.statusMessage;
-      } catch (error) {
-        console.error("Failed to retrieve flights", error);
-        this.statusMessage = "Could not retrieve flight data";
 
+        console.debug(`Received ${this.flights.length} flights`);
+        console.debug("Flight data successfully updated");
+      } catch (error) {
+        console.groupCollapsed("flight data refresh failed");
+        console.error("Failed to retrieve flights", error);
+        console.groupEnd();
         this.statusMessage =
           this.flights.length > 0
             ? "Unable to retrieve latest flight data. Showing previous data."
             : "Flight data is currently unavailable";
+      } finally {
+        this.isRefreshing = false;
+        console.groupEnd();
       }
     },
 
@@ -91,10 +127,14 @@ export default () => {
 
       try {
         this.searchResults = await dashboardService.searchFlights(query);
-
         this.searchPerformed = true;
+        console.groupCollapsed(`Flight search: "${query}"`);
+        console.debug(`Found ${this.searchResults.length} matching flights`);
+        console.groupEnd();
       } catch (error) {
+        console.groupCollapsed(`Flight search failed: "${query}"`);
         console.error("Failed to search flights", error);
+        console.groupEnd();
       }
     },
 
@@ -107,6 +147,10 @@ export default () => {
     },
 
     selectFlight(flight) {
+      console.info(
+        `Selected flight: ${flight?.callsign?.trim() || flight?.icao24}`,
+        flight,
+      );
       this.selectedFlight = flight;
       this.flightPanelOpen = true;
 

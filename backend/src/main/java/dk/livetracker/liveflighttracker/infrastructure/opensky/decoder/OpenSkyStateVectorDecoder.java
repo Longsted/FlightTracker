@@ -11,7 +11,9 @@ public class OpenSkyStateVectorDecoder {
   public OpenSkyStateVector decode(List<Object> state) {
 
     if (state == null || state.size() < 12) {
-      throw new FlightDataProviderException("Invalid OpenSky state vector");
+      int size = state == null ? -1 : state.size();
+      throw new FlightDataProviderException(
+          "Invalid OpenSky state vector: expected at least 12 elements, got" + size);
     }
     String icao24 = decodeValue(state.get(0), String.class);
     String callsign = decodeValue(state.get(1), String.class);
@@ -61,7 +63,12 @@ public class OpenSkyStateVectorDecoder {
 
       return type.cast(value);
     } catch (ClassCastException e) {
-      throw new FlightDataProviderException("Invalid OpenSky state vector");
+      throw new FlightDataProviderException(
+          "Invalid OpenSky state vector field: expected"
+              + type.getSimpleName()
+              + "but got"
+              + value.getClass().getSimpleName(),
+          e);
     }
   }
 }

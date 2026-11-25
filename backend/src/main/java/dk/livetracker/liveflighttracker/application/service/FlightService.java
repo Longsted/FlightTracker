@@ -8,11 +8,14 @@ import dk.livetracker.liveflighttracker.application.interfaces.FlightDataStore;
 import dk.livetracker.liveflighttracker.domain.Flight;
 import java.util.List;
 import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class FlightService {
 
+  private static final Logger log = LoggerFactory.getLogger(FlightService.class);
   private final FlightDataProvider flightDataProvider;
   private final FlightDataStore flightDataStore;
   private final FlightFiltering flightFiltering;
@@ -35,6 +38,13 @@ public class FlightService {
       List<Flight> flights = flightDataProvider.getCurrentFlights();
       flightDataStore.updateSnapshot(flights);
       flightDataStore.recordRefreshSuccess();
+
+      if (flights.isEmpty()) {
+        log.warn("snapshot refreshed, but provider returned 0 flights");
+      } else {
+        log.info("snapshot refreshed with {} flights", flights.size());
+      }
+
     } catch (RuntimeException e) {
       {
         flightDataStore.recordRefreshFailure();
