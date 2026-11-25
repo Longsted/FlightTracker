@@ -2,10 +2,9 @@ const API_BASE_URL = "/api/flights";
 
 async function handleResponse(response) {
   if (!response.ok) {
-      throw new Error(
-
-          `HTTP error: ${response.status}${response.url ? ` on ${response.url}` : ""}`,
-      );
+    throw new Error(
+      `HTTP error: ${response.status}${response.url ? ` on ${response.url}` : ""}`,
+    );
   }
 
   return response.json();

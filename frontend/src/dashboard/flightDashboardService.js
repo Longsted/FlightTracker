@@ -50,28 +50,28 @@ export default class FlightDashboardService {
       statusMessage,
     };
   }
-    async refreshFlightsWithRetry(selectedFlight, mapInitialized) {
-        const retryDelays = [5000, 10000, 15000];
+  async refreshFlightsWithRetry(selectedFlight, mapInitialized) {
+    const retryDelays = [5000, 10000, 15000];
 
-        for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
-            try {
-                return await this.refreshFlights(selectedFlight, mapInitialized);
-            } catch (error) {
-                if (attempt === retryDelays.length) {
-                    throw error;
-                }
-
-                console.warn(
-                    `Flight data request failed. Retrying in ${retryDelays[attempt] / 1000} seconds.`,
-                    error
-                );
-
-                await new Promise((resolve) =>
-                    setTimeout(resolve, retryDelays[attempt])
-                );
-            }
+    for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+      try {
+        return await this.refreshFlights(selectedFlight, mapInitialized);
+      } catch (error) {
+        if (attempt === retryDelays.length) {
+          throw error;
         }
+
+        console.warn(
+          `Flight data request failed. Retrying in ${retryDelays[attempt] / 1000} seconds.`,
+          error,
+        );
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelays[attempt]),
+        );
+      }
     }
+  }
 
   async searchFlights(query) {
     const results = await this.flightApi.searchFlights(query);

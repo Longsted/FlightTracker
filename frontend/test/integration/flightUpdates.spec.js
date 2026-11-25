@@ -100,74 +100,74 @@ test("removes selected flight when it disappears from snapshot", async ({
 });
 
 test("continues updating flights after a failed API request", async ({
-                                                                         page,
-                                                                     }) => {
-    const initialFlight = createFlight({
-        callsign: "TEST-INITIAL",
-        longitude: 10.5,
-        latitude: 56.0,
-    });
+  page,
+}) => {
+  const initialFlight = createFlight({
+    callsign: "TEST-INITIAL",
+    longitude: 10.5,
+    latitude: 56.0,
+  });
 
-    const updatedFlight = createFlight({
-        callsign: "TEST-UPDATED",
-        longitude: 13.0,
-        latitude: 58.0,
-    });
+  const updatedFlight = createFlight({
+    callsign: "TEST-UPDATED",
+    longitude: 13.0,
+    latitude: 58.0,
+  });
 
-    await page.clock.install();
+  await page.clock.install();
 
-    const getRequestCount = await mockFlightApi(page, {
-        snapshots: [
-            [initialFlight],
-            { status: 500 },
-            { status: 500 },
-            { status: 500 },
-            { status: 500 },
-            [updatedFlight],
-        ],
-    });
+  const getRequestCount = await mockFlightApi(page, {
+    snapshots: [
+      [initialFlight],
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      [updatedFlight],
+    ],
+  });
 
-    await page.goto("/");
+  await page.goto("/");
 
-    // Initial request succeeds.
-    await expect(page.locator("header p")).toHaveText("Showing 1 flights");
-    await expect.poll(getRequestCount).toBe(1);
+  // Initial request succeeds.
+  await expect(page.locator("header p")).toHaveText("Showing 1 flights");
+  await expect.poll(getRequestCount).toBe(1);
 
-    // The second request fails after 120 seconds.
-    await page.clock.runFor(120_000);
-    await expect.poll(getRequestCount).toBe(2);
+  // The second request fails after 120 seconds.
+  await page.clock.runFor(120_000);
+  await expect.poll(getRequestCount).toBe(2);
 
-    // First retry.
-    await page.clock.runFor(5000);
-    await expect.poll(getRequestCount).toBe(3);
+  // First retry.
+  await page.clock.runFor(5000);
+  await expect.poll(getRequestCount).toBe(3);
 
-    // Second retry.
-    await page.clock.runFor(10000);
-    await expect.poll(getRequestCount).toBe(4);
+  // Second retry.
+  await page.clock.runFor(10000);
+  await expect.poll(getRequestCount).toBe(4);
 
-    // Third retry.
-    await page.clock.runFor(15000);
-    await expect.poll(getRequestCount).toBe(5);
+  // Third retry.
+  await page.clock.runFor(15000);
+  await expect.poll(getRequestCount).toBe(5);
 
-    await expect(page.locator("header p")).toHaveText(
-        "Unable to retrieve latest flight data. Showing previous data.",
-    );
+  await expect(page.locator("header p")).toHaveText(
+    "Unable to retrieve latest flight data. Showing previous data.",
+  );
 
-    // The existing marker should still be interactive.
-    await clickFlightPosition(page, 10.5, 56.0);
+  // The existing marker should still be interactive.
+  await clickFlightPosition(page, 10.5, 56.0);
 
-    await expect(flightDetailsContent(page)).toBeVisible();
-    await expect(flightDetail(page, "callsign")).toHaveText("TEST-INITIAL");
+  await expect(flightDetailsContent(page)).toBeVisible();
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-INITIAL");
 
-    // The next regular request succeeds at the next 120-second interval.
-    await page.clock.runFor(90_000);
-    await expect.poll(getRequestCount).toBe(6);
+  // The next regular request succeeds at the next 120-second interval.
+  await page.clock.runFor(90_000);
+  await expect.poll(getRequestCount).toBe(6);
 
-    await expect(page.locator("header p")).toHaveText("Showing 1 flights");
+  await expect(page.locator("header p")).toHaveText("Showing 1 flights");
 
-    // The new marker should be interactive at its updated position.
-    await clickFlightPosition(page, 13.0, 58.0);
+  // The new marker should be interactive at its updated position.
+  await clickFlightPosition(page, 13.0, 58.0);
 
-    await expect(flightDetailsContent(page)).toBeVisible();
-    await expect(flightDetail(page, "callsign")).toHaveText("TEST-UPDATED");
+  await expect(flightDetailsContent(page)).toBeVisible();
+  await expect(flightDetail(page, "callsign")).toHaveText("TEST-UPDATED");
 });

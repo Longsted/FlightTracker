@@ -45,32 +45,32 @@ test("displays message when no flights are available", async ({ page }) => {
 });
 
 test("displays error message when API returns HTTP 500", async ({ page }) => {
-    await page.clock.install();
+  await page.clock.install();
 
-    const getRequestCount = await mockFlightApi(page, { status: 500 });
+  const getRequestCount = await mockFlightApi(page, { status: 500 });
 
-    await page.goto("/");
+  await page.goto("/");
 
-    // Initial request fails.
-    await expect.poll(getRequestCount).toBe(1);
+  // Initial request fails.
+  await expect.poll(getRequestCount).toBe(1);
 
-    // First retry after 5 seconds.
-    await page.clock.runFor(5000);
-    await expect.poll(getRequestCount).toBe(2);
+  // First retry after 5 seconds.
+  await page.clock.runFor(5000);
+  await expect.poll(getRequestCount).toBe(2);
 
-    // Second retry after another 10 seconds.f
-    await page.clock.runFor(10000);
-    await expect.poll(getRequestCount).toBe(3);
+  // Second retry after another 10 seconds.f
+  await page.clock.runFor(10000);
+  await expect.poll(getRequestCount).toBe(3);
 
-    // Third retry after another 15 seconds.
-    await page.clock.runFor(15000);
-    await expect.poll(getRequestCount).toBe(4);
+  // Third retry after another 15 seconds.
+  await page.clock.runFor(15000);
+  await expect.poll(getRequestCount).toBe(4);
 
-    await expect(page.locator("header p")).toHaveText(
-        "Flight data is currently unavailable",
-    );
+  await expect(page.locator("header p")).toHaveText(
+    "Flight data is currently unavailable",
+  );
 
-    await expect(page.locator("#flight-map")).toBeVisible();
+  await expect(page.locator("#flight-map")).toBeVisible();
 });
 
 test("displays flight marker at its geographic position", async ({ page }) => {
@@ -106,54 +106,54 @@ test("displays flight marker at its geographic position", async ({ page }) => {
 // ===============================================
 
 test("preserves previous flight data when API refresh fails", async ({
-                                                                         page,
-                                                                     }) => {
-    // Given: The API initially returns one flight,
-    // but all subsequent requests fail with HTTP 500.
-    const flight = createFlight({
-        callsign: "PRESERVED123",
-    });
+  page,
+}) => {
+  // Given: The API initially returns one flight,
+  // but all subsequent requests fail with HTTP 500.
+  const flight = createFlight({
+    callsign: "PRESERVED123",
+  });
 
-    await page.clock.install();
+  await page.clock.install();
 
-    await mockFlightApi(page, {
-        snapshots: [
-            { flights: [flight] },
-            { status: 500 },
-            { status: 500 },
-            { status: 500 },
-            { status: 500 },
-        ],
-    });
+  await mockFlightApi(page, {
+    snapshots: [
+      { flights: [flight] },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+    ],
+  });
 
-    await page.goto("/");
+  await page.goto("/");
 
-    await expect(page.locator("header p")).toHaveText("Showing 1 flights");
+  await expect(page.locator("header p")).toHaveText("Showing 1 flights");
 
-    await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
+  await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
 
-    // When: The dashboard attempts to refresh flight data.
-    const refreshPromise = page.evaluate(() => {
-        const element = document.querySelector('[x-data="flightDashboard"]');
-        const dashboard = window.Alpine.$data(element);
+  // When: The dashboard attempts to refresh flight data.
+  const refreshPromise = page.evaluate(() => {
+    const element = document.querySelector('[x-data="flightDashboard"]');
+    const dashboard = window.Alpine.$data(element);
 
-        return dashboard.refreshFlights();
-    });
+    return dashboard.refreshFlights();
+  });
 
-    // Wait for all four failed attempts.
-    await page.clock.runFor(5000);
-    await page.clock.runFor(10000);
-    await page.clock.runFor(15000);
+  // Wait for all four failed attempts.
+  await page.clock.runFor(5000);
+  await page.clock.runFor(10000);
+  await page.clock.runFor(15000);
 
-    await refreshPromise;
+  await refreshPromise;
 
-    // Then: The previous flight data is preserved
-    // and the dashboard displays an appropriate error message.
-    await expect(page.locator("header p")).toHaveText(
-        "Unable to retrieve latest flight data. Showing previous data.",
-    );
+  // Then: The previous flight data is preserved
+  // and the dashboard displays an appropriate error message.
+  await expect(page.locator("header p")).toHaveText(
+    "Unable to retrieve latest flight data. Showing previous data.",
+  );
 
-    await expect(page.locator(".flight-list-item")).toHaveCount(1);
+  await expect(page.locator(".flight-list-item")).toHaveCount(1);
 
-    await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
+  await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
 });
