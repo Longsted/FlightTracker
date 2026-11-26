@@ -17,11 +17,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import testutil.FlightTestDataFactory;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class FlightControllerIntegrationTest {
 
+  private static final String URI_TEMPLATE = "/api/flights";
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private FlightDataStore snapshotStore;
@@ -31,25 +33,17 @@ class FlightControllerIntegrationTest {
   @Test
   void getFlightsReturnsFlightsFromSnapshot() throws Exception {
     // Given
-    Flight validFlight = createFlight();
-    Flight invalidFlight = createFlightWithPosition(181.0, 56.2639);
+    Flight validFlight = FlightTestDataFactory.createSingleFlight();
+    Flight invalidFlight = FlightTestDataFactory.createFlight(181.0, 56.2639);
 
     when(snapshotStore.getSnapshot()).thenReturn(List.of(validFlight, invalidFlight));
 
-    // When & Then
+    // When
     mockMvc
-        .perform(get("/api/flights"))
+        .perform(get(URI_TEMPLATE))
+        // Then
         .andExpect(status().isOk())
-        .andExpect(
-            content()
-                .json(
-                    """
-                    [{
-                        "icao24": "abc123",
-                        "callsign": "SAS123",
-                        "originCountry": "Denmark"
-                    }]
-                    """));
+        .andExpect(content().json(SINGLE_FLIGHT_JSON));
   }
 
   @Test
@@ -57,76 +51,70 @@ class FlightControllerIntegrationTest {
     // Given
     when(snapshotStore.getSnapshot()).thenReturn(List.of());
 
-    // When & Then
-    mockMvc.perform(get("/api/flights")).andExpect(status().isOk()).andExpect(content().json("[]"));
+    // When
+    mockMvc
+        .perform(get(URI_TEMPLATE))
+        // then
+        .andExpect(status().isOk())
+        .andExpect(content().json(EMPTY_FLIGHTS_JSON));
   }
 
   @Test
   void searchFlightsReturnsMatchingFlightsFromSnapshot() throws Exception {
     // Given
-    Flight flight = createFlight();
+    Flight flight = FlightTestDataFactory.createFlight();
 
     when(snapshotStore.getSnapshot()).thenReturn(List.of(flight));
 
-    // When & Then
+    // When
     mockMvc
-        .perform(get("/api/flights/search").param("query", "SAS"))
+        .perform(get(URI_TEMPLATE + "/search").param("query", "SAS"))
+        // Then
         .andExpect(status().isOk())
-        .andExpect(
-            content()
-                .json(
-                    """
-                    [{
-                        "icao24": "abc123",
-                        "callsign": "SAS123",
-                        "originCountry": "Denmark"
-                    }]
-                    """));
+        .andExpect(content().json(SINGLE_FLIGHT_JSON));
   }
 
   @Test
   void searchFlightsReturnsEmptyListWhenNoMatches() throws Exception {
     // Given
-    Flight flight = createFlight();
+    Flight flight = FlightTestDataFactory.createFlight();
 
     when(snapshotStore.getSnapshot()).thenReturn(List.of(flight));
 
-    // When & Then
+    // When
     mockMvc
-        .perform(get("/api/flights/search").param("query", "NOTFOUND"))
+        .perform(get(URI_TEMPLATE + "/search").param("query", "NOTFOUND"))
+        // Then
         .andExpect(status().isOk())
-        .andExpect(content().json("[]"));
+        .andExpect(content().json(EMPTY_FLIGHTS_JSON));
   }
 
   @Test
   void filterFlightsFiltersByMultipleCriteria() throws Exception {
     // Given
-    Flight matchingFlight = createFlight();
-    Flight wrongCountry = createFlightWithCountry("Sweden");
-    Flight wrongAltitude = createFlightWithAltitude(20000.0);
+    Flight matchingFlight =
+        FlightTestDataFactory.createFlight("Denmark", 10000.0, 250.0, false, 10.7522, 56.2639);
+
+    Flight wrongCountry =
+        FlightTestDataFactory.createFlight("Sweden", 10000.0, 250.0, false, 10.7522, 56.2639);
+
+    Flight wrongAltitude =
+        FlightTestDataFactory.createFlight("Denmark", 20000.0, 250.0, false, 10.7522, 56.2639);
 
     when(snapshotStore.getSnapshot())
         .thenReturn(List.of(matchingFlight, wrongCountry, wrongAltitude));
 
-    // When & Then
+    // When
     mockMvc
         .perform(
-            get("/api/flights/filter")
+            get(URI_TEMPLATE + "/filter")
                 .param("originCountry", "Denmark")
                 .param("minAltitude", "5000")
                 .param("maxAltitude", "12000")
                 .param("onGround", "false"))
+        // Then
         .andExpect(status().isOk())
-        .andExpect(
-            content()
-                .json(
-                    """
-                    [{
-                        "icao24": "abc123",
-                        "callsign": "SAS123",
-                        "originCountry": "Denmark"
-                    }]
-                    """));
+        .andExpect(content().json(SINGLE_FLIGHT_JSON));
   }
 
   @Test
@@ -134,62 +122,12 @@ class FlightControllerIntegrationTest {
     // Given
     String invalidAltitude = "not-a-number";
 
-    // When & Then
+    // When
     mockMvc
-        .perform(get("/api/flights/filter").param("minAltitude", invalidAltitude))
+        .perform(get(URI_TEMPLATE + "/filter").param("minAltitude", invalidAltitude))
+
+        // Then
         .andExpect(status().isBadRequest());
-  }
-
-  private Flight createFlight() {
-    return createFlightWithPosition(10.7522, 56.2639);
-  }
-
-  private Flight createFlightWithPosition(Double longitude, Double latitude) {
-    return new Flight(
-        "abc123",
-        "SAS123",
-        "Denmark",
-        Instant.ofEpochSecond(1730000000L),
-        Instant.ofEpochSecond(1730000000L),
-        longitude,
-        latitude,
-        10000.0,
-        false,
-        250.0,
-        180.0,
-        0.0);
-  }
-
-  private Flight createFlightWithCountry(String country) {
-    return new Flight(
-        "def456",
-        "SAS456",
-        country,
-        Instant.ofEpochSecond(1730000000L),
-        Instant.ofEpochSecond(1730000000L),
-        10.7522,
-        56.2639,
-        10000.0,
-        false,
-        250.0,
-        180.0,
-        0.0);
-  }
-
-  private Flight createFlightWithAltitude(Double altitude) {
-    return new Flight(
-        "ghi789",
-        "SAS789",
-        "Denmark",
-        Instant.ofEpochSecond(1730000000L),
-        Instant.ofEpochSecond(1730000000L),
-        10.7522,
-        56.2639,
-        altitude,
-        false,
-        250.0,
-        180.0,
-        0.0);
   }
 
   @Test
@@ -201,19 +139,31 @@ class FlightControllerIntegrationTest {
 
     when(snapshotStore.getStatus()).thenReturn(expectedStatus);
 
-    // When & Then
+    // When
     mockMvc
-        .perform(get("/api/flights/status"))
+        .perform(get(URI_TEMPLATE + "/status"))
+        // Then
         .andExpect(status().isOk())
-        .andExpect(
-            content()
-                .json(
-                    """
-                    {
-                        "available": true,
-                        "lastAttempt": "2026-11-17T10:00:00Z",
-                        "lastSuccessfulUpdate": "2026-11-17T10:00:00Z"
-                    }
-                    """));
+        .andExpect(content().json(FLIGHT_STATUS_JSON));
   }
+
+  private static final String SINGLE_FLIGHT_JSON =
+      """
+      [{
+          "icao24": "abc123",
+          "callsign": "SAS123",
+          "originCountry": "Denmark"
+      }]
+      """;
+
+  private static final String EMPTY_FLIGHTS_JSON = "[]";
+
+  private static final String FLIGHT_STATUS_JSON =
+      """
+      {
+          "available": true,
+          "lastAttempt": "2026-11-17T10:00:00Z",
+          "lastSuccessfulUpdate": "2026-11-17T10:00:00Z"
+      }
+      """;
 }

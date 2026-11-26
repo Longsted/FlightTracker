@@ -16,8 +16,9 @@ class FlightRefreshSchedulerIntegrationTest {
 
   @Test
   void schedulerAutomaticallyRefreshesFlights() {
+    // given
     clearInvocations(flightService);
-
+    // when and then
     verify(flightService, timeout(5000).atLeastOnce()).refreshFlights();
   }
 }

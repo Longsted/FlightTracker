@@ -3,6 +3,7 @@ package dk.livetracker.liveflighttracker.infrastructure.opensky;
 import dk.livetracker.liveflighttracker.infrastructure.exception.FlightDataProviderException;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyTokenResponse;
+import java.time.Clock;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +26,13 @@ public class OpenSkyClient {
   private String accessToken;
   private Instant tokenExpiresAt;
   private static final long TOKEN_EXPIRY_BUFFER_SECONDS = 60;
+  private final Clock clock;
 
-  public OpenSkyClient(RestClient.Builder restClientBuilder, OpenSkyProperties properties) {
+  public OpenSkyClient(
+      RestClient.Builder restClientBuilder, OpenSkyProperties properties, Clock clock) {
     this.restClient = restClientBuilder.build();
     this.properties = properties;
+    this.clock = clock;
   }
 
   private OpenSkyTokenResponse fetchAccessToken() {
@@ -67,12 +71,12 @@ public class OpenSkyClient {
   private String getAccessToken() {
     if (accessToken == null
         || tokenExpiresAt == null
-        || Instant.now().plusSeconds(TOKEN_EXPIRY_BUFFER_SECONDS).isAfter(tokenExpiresAt)) {
+        || Instant.now(clock).plusSeconds(TOKEN_EXPIRY_BUFFER_SECONDS).isAfter(tokenExpiresAt)) {
 
       OpenSkyTokenResponse response = fetchAccessToken();
 
       accessToken = response.accessToken();
-      tokenExpiresAt = Instant.now().plusSeconds(response.expiresIn());
+      tokenExpiresAt = Instant.now(clock).plusSeconds(response.expiresIn());
     }
 
     return accessToken;

@@ -1,6 +1,7 @@
 package dk.livetracker.liveflighttracker.infrastructure.flightdatasnapshot;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static testutil.FlightTestDataFactory.createFlight;
 
 import dk.livetracker.liveflighttracker.application.dto.FlightDataStatus;
 import dk.livetracker.liveflighttracker.domain.Flight;
@@ -62,8 +63,8 @@ class InMemoryFlightDataStoreTest {
 
     // Then
     assertFalse(status.available());
-    assertEquals(null, status.lastAttempt());
-    assertEquals(null, status.lastSuccessfulUpdate());
+    assertNull(status.lastAttempt());
+    assertNull(status.lastSuccessfulUpdate());
   }
 
   @Test
@@ -107,10 +108,5 @@ class InMemoryFlightDataStoreTest {
     assertFalse(status.available());
     assertEquals(lastSuccessfulUpdate, status.lastSuccessfulUpdate());
     assertNotNull(status.lastAttempt());
-  }
-
-  private Flight createFlight() {
-    return new Flight(
-        "abc123", "SAS123", "Denmark", null, null, 10.0, 56.0, 10000.0, false, 200.0, 180.0, 0.0);
   }
 }

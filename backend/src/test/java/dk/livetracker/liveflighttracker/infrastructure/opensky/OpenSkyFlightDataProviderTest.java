@@ -10,7 +10,6 @@ import dk.livetracker.liveflighttracker.infrastructure.opensky.decoder.OpenSkySt
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStateVector;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.dto.OpenSkyStatesResponse;
 import dk.livetracker.liveflighttracker.infrastructure.opensky.mapper.OpenSkyStateVectorMapper;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import testutil.FlightTestDataFactory;
 
 @ExtendWith(MockitoExtension.class)
 public class OpenSkyFlightDataProviderTest {
@@ -56,34 +56,10 @@ public class OpenSkyFlightDataProviderTest {
             1.0);
 
     Flight flightA =
-        new Flight(
-            "icaoA",
-            "CALLA",
-            "Denmark",
-            Instant.ofEpochSecond(123456L),
-            Instant.ofEpochSecond(123456L),
-            10.0,
-            55.0,
-            10000.0,
-            false,
-            200.0,
-            180.0,
-            0.0);
+        FlightTestDataFactory.createFlight("Denmark", 10000.0, 200.0, false, 10.0, 55.0);
 
     Flight flightC =
-        new Flight(
-            "icaoC",
-            "CALLC",
-            "Germany",
-            Instant.ofEpochSecond(123456L),
-            Instant.ofEpochSecond(123456L),
-            11.0,
-            56.0,
-            11000.0,
-            false,
-            210.0,
-            190.0,
-            1.0);
+        FlightTestDataFactory.createFlight("Denmark", 10000.0, 200.0, false, 10.0, 55.0);
 
     when(openSkyClientMock.getCurrentStates()).thenReturn(response);
 
@@ -100,7 +76,6 @@ public class OpenSkyFlightDataProviderTest {
 
     // then
     assertEquals(List.of(flightA, flightC), result);
-
     verify(openSkyStateVectorMapperMock).toFlight(vectorA);
     verify(openSkyStateVectorMapperMock).toFlight(vectorC);
   }
@@ -111,7 +86,7 @@ public class OpenSkyFlightDataProviderTest {
     OpenSkyStatesResponse response = new OpenSkyStatesResponse(123456L, null);
     when(openSkyClientMock.getCurrentStates()).thenReturn(response);
 
-    // then
+    // when and then
     assertThrows(FlightDataProviderException.class, () -> provider.getCurrentFlights());
   }
 
@@ -167,19 +142,7 @@ public class OpenSkyFlightDataProviderTest {
             0.0);
 
     Flight flight =
-        new Flight(
-            "icaoA",
-            "CALLA",
-            "Denmark",
-            Instant.ofEpochSecond(123456L),
-            Instant.ofEpochSecond(123456L),
-            10.0,
-            55.0,
-            10000.0,
-            false,
-            200.0,
-            180.0,
-            0.0);
+        FlightTestDataFactory.createFlight("Denmark", 10000.0, 200.0, false, 10.0, 55.0);
 
     when(openSkyClientMock.getCurrentStates()).thenReturn(response);
     when(openSkyStateVectorDecoderMock.decode(null))
@@ -196,12 +159,13 @@ public class OpenSkyFlightDataProviderTest {
 
   @Test
   void getCurrentFlights_propagatesClientException() {
+    // given
     doThrow(new FlightDataProviderException("OpenSky unavailable"))
         .when(openSkyClientMock)
         .getCurrentStates();
 
+    // when & Then
     assertThrows(FlightDataProviderException.class, () -> provider.getCurrentFlights());
-
     verifyNoInteractions(openSkyStateVectorDecoderMock);
     verifyNoInteractions(openSkyStateVectorMapperMock);
   }

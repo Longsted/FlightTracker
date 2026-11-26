@@ -24,26 +24,28 @@ class FlightRefreshSchedulerTest {
 
   @Test
   void initialRefreshCallsFlightService() {
+    // when
     scheduler.initialRefresh();
-
+    // then
     verify(flightService).refreshFlights();
   }
 
   @Test
   void scheduledRefreshCallsFlightService() {
+    // given
     scheduler.scheduledRefresh();
-
+    // then
     verify(flightService).refreshFlights();
   }
 
   @Test
   void initialRefreshHandlesFlightDataProviderException() {
+    // given
     doThrow(new FlightDataProviderException("Provider unavailable"))
         .when(flightService)
         .refreshFlights();
-
+    // when and then
     assertDoesNotThrow(() -> scheduler.initialRefresh());
-
     verify(flightService).refreshFlights();
   }
 

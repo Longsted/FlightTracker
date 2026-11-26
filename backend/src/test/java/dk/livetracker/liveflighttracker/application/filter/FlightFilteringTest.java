@@ -1,10 +1,10 @@
 package dk.livetracker.liveflighttracker.application.filter;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static testutil.FlightTestDataFactory.createFlight;
 
 import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
 import dk.livetracker.liveflighttracker.domain.Flight;
-import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -189,30 +189,38 @@ class FlightFilteringTest {
     assertEquals(List.of(atMinimum, atMaximum), result);
   }
 
-  private FlightFilter emptyFilter() {
-    return new FlightFilter(null, null, null, null, null, null, null, null, null, null);
+  @Test
+  void filterMatchesOriginCountryRegardlessOfCase() {
+    // Given
+    Flight flight = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
+
+    FlightFilter filter =
+        new FlightFilter("DENMARK", null, null, null, null, null, null, null, null, null);
+
+    // When
+    List<Flight> result = flightFiltering.filter(List.of(flight), filter);
+
+    // Then
+    assertEquals(List.of(flight), result);
   }
 
-  private Flight createFlight(
-      String country,
-      Double altitude,
-      Double velocity,
-      boolean onGround,
-      Double longitude,
-      Double latitude) {
+  @Test
+  void filterExcludesFlightsWithMissingVelocity() {
+    // Given
+    Flight missingVelocity = createFlight("Denmark", 10000.0, null, false, 10.0, 56.0);
+    Flight validVelocity = createFlight("Denmark", 10000.0, 250.0, false, 10.0, 56.0);
 
-    return new Flight(
-        "abc123",
-        "SAS123",
-        country,
-        Instant.parse("2026-11-11T10:00:00Z"),
-        Instant.parse("2026-11-11T10:00:00Z"),
-        longitude,
-        latitude,
-        altitude,
-        onGround,
-        velocity,
-        180.0,
-        0.0);
+    FlightFilter filter =
+        new FlightFilter(null, null, null, 150.0, 300.0, null, null, null, null, null);
+
+    // When
+    List<Flight> result = flightFiltering.filter(List.of(missingVelocity, validVelocity), filter);
+
+    // Then
+    assertEquals(List.of(validVelocity), result);
+  }
+
+  private FlightFilter emptyFilter() {
+    return new FlightFilter(null, null, null, null, null, null, null, null, null, null);
   }
 }
