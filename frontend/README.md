@@ -6,14 +6,14 @@ The frontend communicates with the Spring Boot backend through its REST API.
 
 ## Technologies
 
-| Technology | Purpose |
-|---|---|
-| Vanilla JavaScript | Application logic |
-| Alpine.js | Reactive UI state and user interaction |
-| OpenLayers | Interactive map and flight visualization |
-| OpenStreetMap | Map tiles and background map |
-| Bootstrap | UI components and styling |
-| Vite | Development server and build tool |
+| Technology         | Purpose                                  |
+| ------------------ | ---------------------------------------- |
+| Vanilla JavaScript | Application logic                        |
+| Alpine.js          | Reactive UI state and user interaction   |
+| OpenLayers         | Interactive map and flight visualization |
+| OpenStreetMap      | Map tiles and background map             |
+| Bootstrap          | UI components and styling                |
+| Vite               | Development server and build tool        |
 
 ## Features
 
