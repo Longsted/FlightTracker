@@ -23,7 +23,9 @@ public class FlightRefreshScheduler {
     refreshFlightsSafely();
   }
 
-  @Scheduled(fixedDelayString = "${flight.refresh.interval-ms}")
+  @Scheduled(
+      initialDelayString = "${flight.refresh.interval-ms}",
+      fixedDelayString = "${flight.refresh.interval-ms}")
   public void scheduledRefresh() {
     refreshFlightsSafely();
   }

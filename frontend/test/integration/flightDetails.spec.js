@@ -1,14 +1,14 @@
-import { test, expect } from "./fixtures/testFixtures.js";
+import { test, expect } from "../fixtures/testFixtures.js";
 import {
   createFlight,
   mockFlightApi,
-  clickFlightPosition,
-  flightDetail,
-  flightDetailsContent,
+} from "./helpers/integrationTestHelpers.js";
+import {
   getFlightMarkerSvg,
   waitForMapRender,
-} from "./helpers/integrationTestHelpers.js";
-
+  clickFlightPosition,
+} from "../helpers/mapHelpers.js";
+import { flightDetail, flightDetailsContent } from "../helpers/uiHelpers.js";
 // ========================================
 // US3 - Selected flight details
 // ========================================

@@ -2,8 +2,8 @@ package dk.livetracker.liveflighttracker.domain;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static testutil.FlightTestDataFactory.createFlight;
 
-import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class FlightTest {
@@ -102,21 +102,5 @@ class FlightTest {
 
     // Then
     assertTrue(result);
-  }
-
-  private Flight createFlight(Double longitude, Double latitude) {
-    return new Flight(
-        "4acb43",
-        "SAS1665",
-        "Sweden",
-        Instant.now(),
-        Instant.now(),
-        longitude,
-        latitude,
-        5440.68,
-        false,
-        179.72,
-        135.93,
-        17.88);
   }
 }

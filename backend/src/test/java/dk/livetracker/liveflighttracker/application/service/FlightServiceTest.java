@@ -2,6 +2,7 @@ package dk.livetracker.liveflighttracker.application.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static testutil.FlightTestDataFactory.*;
 
 import dk.livetracker.liveflighttracker.application.dto.FlightDataStatus;
 import dk.livetracker.liveflighttracker.application.dto.FlightFilter;
@@ -93,7 +94,7 @@ class FlightServiceTest {
   }
 
   @Test
-  void searchFlightsMatchesCallsign() {
+  void searchFlightsTrimsAndMatchesCallsignCaseInsensitively() {
     // Given
     Flight flight = createFlightWithIdentifiers("abc123", "SAS123");
     when(snapshotStore.getSnapshot()).thenReturn(List.of(flight));
@@ -113,19 +114,6 @@ class FlightServiceTest {
 
     // When
     List<Flight> result = service.searchFlights("4ACB");
-
-    // Then
-    assertEquals(List.of(flight), result);
-  }
-
-  @Test
-  void searchFlightsIsCaseInsensitive() {
-    // Given
-    Flight flight = createFlightWithIdentifiers("abc123", "SAS123");
-    when(snapshotStore.getSnapshot()).thenReturn(List.of(flight));
-
-    // When
-    List<Flight> result = service.searchFlights("sas");
 
     // Then
     assertEquals(List.of(flight), result);
@@ -183,38 +171,6 @@ class FlightServiceTest {
     assertEquals(expectedFlights, result);
     verify(snapshotStore).getSnapshot();
     verify(flightFiltering).filter(expectedFlights, filter);
-  }
-
-  private Flight createFlight(Double longitude, Double latitude) {
-    return new Flight(
-        "abc123",
-        "SAS123",
-        "Denmark",
-        Instant.parse("2026-11-11T10:00:00Z"),
-        Instant.parse("2026-11-11T10:00:00Z"),
-        longitude,
-        latitude,
-        10000.0,
-        false,
-        250.0,
-        180.0,
-        0.0);
-  }
-
-  private Flight createFlightWithIdentifiers(String icao24, String callsign) {
-    return new Flight(
-        icao24,
-        callsign,
-        "Denmark",
-        Instant.parse("2026-11-11T10:00:00Z"),
-        Instant.parse("2026-11-11T10:00:00Z"),
-        10.0,
-        56.0,
-        10000.0,
-        false,
-        250.0,
-        180.0,
-        0.0);
   }
 
   @Test

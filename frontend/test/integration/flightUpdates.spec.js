@@ -1,11 +1,11 @@
-import { test, expect } from "./fixtures/testFixtures.js";
+import { test, expect } from "../fixtures/testFixtures.js";
 import {
   createFlight,
   mockFlightApi,
-  clickFlightPosition,
-  flightDetail,
-  flightDetailsContent,
 } from "./helpers/integrationTestHelpers.js";
+
+import { clickFlightPosition } from "../helpers/mapHelpers.js";
+import { flightDetail, flightDetailsContent } from "../helpers/uiHelpers.js";
 
 // ========================================
 // US2 - Update flight positions

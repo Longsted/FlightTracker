@@ -1,12 +1,11 @@
-import { test, expect } from "./fixtures/testFixtures.js";
+import { test, expect } from "../fixtures/testFixtures.js";
 import {
   createFlight,
   mockFlightApi,
-  clickFlightPosition,
-  flightDetail,
-  flightDetailsContent,
 } from "./helpers/integrationTestHelpers.js";
-
+import { clickFlightPosition } from "../helpers/mapHelpers.js";
+import { flightDetail, flightDetailsContent } from "../helpers/uiHelpers.js";
+import { TEST_FLIGHTS, TEST_COUNTRIES } from "../helpers/testConstants.js";
 // ========================================
 // US1 - Display flight data on map
 // ========================================
@@ -15,9 +14,8 @@ test("displays flight data received from API", async ({ page }) => {
   const flights = [
     createFlight(),
     createFlight({
-      icao24: "def456",
-      callsign: "TEST456",
-      originCountry: "Germany",
+      ...TEST_FLIGHTS.LUFTHANSA, //Copy flight properties into the new object
+      originCountry: TEST_COUNTRIES.GERMANY,
       longitude: 13.405,
       latitude: 52.52,
       barometricAltitude: 11000,
@@ -58,7 +56,7 @@ test("displays error message when API returns HTTP 500", async ({ page }) => {
   await page.clock.runFor(5000);
   await expect.poll(getRequestCount).toBe(2);
 
-  // Second retry after another 10 seconds.f
+  // Second retry after another 10 seconds.
   await page.clock.runFor(10000);
   await expect.poll(getRequestCount).toBe(3);
 
@@ -75,6 +73,8 @@ test("displays error message when API returns HTTP 500", async ({ page }) => {
 
 test("displays flight marker at its geographic position", async ({ page }) => {
   const flight = createFlight({
+    ...TEST_FLIGHTS.SAS,
+    originCountry: TEST_COUNTRIES.DENMARK,
     callsign: "TEST-CENTER",
     longitude: 10.5,
     latitude: 56.0,
@@ -90,8 +90,12 @@ test("displays flight marker at its geographic position", async ({ page }) => {
   await expect(flightDetailsContent(page)).toBeVisible();
 
   await expect(flightDetail(page, "callsign")).toHaveText("TEST-CENTER");
-  await expect(flightDetail(page, "icao24")).toHaveText("abc123");
-  await expect(flightDetail(page, "origin-country")).toHaveText("Denmark");
+  await expect(flightDetail(page, "icao24")).toHaveText(
+    TEST_FLIGHTS.SAS.icao24,
+  );
+  await expect(flightDetail(page, "origin-country")).toHaveText(
+    TEST_COUNTRIES.DENMARK,
+  );
   await expect(flightDetail(page, "status")).toHaveText("In flight");
   await expect(flightDetail(page, "altitude")).toHaveText("10.000 m");
   await expect(flightDetail(page, "ground-speed")).toHaveText("250 m/s");
@@ -116,7 +120,7 @@ test("preserves previous flight data when API refresh fails", async ({
 
   await page.clock.install();
 
-  await mockFlightApi(page, {
+  const getRequestCount = await mockFlightApi(page, {
     snapshots: [
       { flights: [flight] },
       { status: 500 },
@@ -129,23 +133,28 @@ test("preserves previous flight data when API refresh fails", async ({
   await page.goto("/");
 
   await expect(page.locator("header p")).toHaveText("Showing 1 flights");
-
   await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
 
-  // When: The dashboard attempts to refresh flight data.
-  const refreshPromise = page.evaluate(() => {
-    const element = document.querySelector('[x-data="flightDashboard"]');
-    const dashboard = window.Alpine.$data(element);
+  // Initial request complete.
+  await expect.poll(getRequestCount).toBe(1);
 
-    return dashboard.refreshFlights();
-  });
+  // Start refresh after 120 sec.
+  await page.clock.fastForward(120_000);
 
-  // Wait for all four failed attempts.
+  // first fail refresh.
+  await expect.poll(getRequestCount).toBe(2);
+
+  // First retry after 5 secs.
   await page.clock.runFor(5000);
-  await page.clock.runFor(10000);
-  await page.clock.runFor(15000);
+  await expect.poll(getRequestCount).toBe(3);
 
-  await refreshPromise;
+  // Second retry after 10 secs.
+  await page.clock.runFor(10000);
+  await expect.poll(getRequestCount).toBe(4);
+
+  // Third retry after 15 secs.
+  await page.clock.runFor(15000);
+  await expect.poll(getRequestCount).toBe(5);
 
   // Then: The previous flight data is preserved
   // and the dashboard displays an appropriate error message.
@@ -154,6 +163,5 @@ test("preserves previous flight data when API refresh fails", async ({
   );
 
   await expect(page.locator(".flight-list-item")).toHaveCount(1);
-
   await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
 });
