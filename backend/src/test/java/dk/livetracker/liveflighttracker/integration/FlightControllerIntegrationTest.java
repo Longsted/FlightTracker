@@ -23,7 +23,10 @@ import testutil.FlightTestDataFactory;
 @AutoConfigureMockMvc
 class FlightControllerIntegrationTest {
 
-  private static final String URI_TEMPLATE = "/api/flights";
+  private static final String BASE_URI = "/api/flights";
+  private static final String SEARCH_ENDPOINT = BASE_URI + "/search";
+  private static final String FILTER_ENDPOINT = BASE_URI + "/filter";
+  private static final String STATUS_ENDPOINT = BASE_URI + "/status";
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private FlightDataStore snapshotStore;
@@ -40,7 +43,7 @@ class FlightControllerIntegrationTest {
 
     // When
     mockMvc
-        .perform(get(URI_TEMPLATE))
+        .perform(get(BASE_URI))
         // Then
         .andExpect(status().isOk())
         .andExpect(content().json(SINGLE_FLIGHT_JSON));
@@ -53,7 +56,7 @@ class FlightControllerIntegrationTest {
 
     // When
     mockMvc
-        .perform(get(URI_TEMPLATE))
+        .perform(get(BASE_URI))
         // then
         .andExpect(status().isOk())
         .andExpect(content().json(EMPTY_FLIGHTS_JSON));
@@ -68,10 +71,11 @@ class FlightControllerIntegrationTest {
 
     // When
     mockMvc
-        .perform(get(URI_TEMPLATE + "/search").param("query", "SAS"))
+        .perform(get(SEARCH_ENDPOINT).param("query", "SAS"))
         // Then
         .andExpect(status().isOk())
-        .andExpect(content().json(SINGLE_FLIGHT_JSON));
+        .andExpect(content().json(SINGLE_FLIGHT_JSON)
+        );
   }
 
   @Test
@@ -83,7 +87,7 @@ class FlightControllerIntegrationTest {
 
     // When
     mockMvc
-        .perform(get(URI_TEMPLATE + "/search").param("query", "NOTFOUND"))
+        .perform(get(SEARCH_ENDPOINT).param("query", "NOTFOUND"))
         // Then
         .andExpect(status().isOk())
         .andExpect(content().json(EMPTY_FLIGHTS_JSON));
@@ -107,7 +111,7 @@ class FlightControllerIntegrationTest {
     // When
     mockMvc
         .perform(
-            get(URI_TEMPLATE + "/filter")
+            get(FILTER_ENDPOINT)
                 .param("originCountry", "Denmark")
                 .param("minAltitude", "5000")
                 .param("maxAltitude", "12000")
@@ -124,7 +128,7 @@ class FlightControllerIntegrationTest {
 
     // When
     mockMvc
-        .perform(get(URI_TEMPLATE + "/filter").param("minAltitude", invalidAltitude))
+        .perform(get(FILTER_ENDPOINT).param("minAltitude", invalidAltitude))
 
         // Then
         .andExpect(status().isBadRequest());
@@ -141,7 +145,7 @@ class FlightControllerIntegrationTest {
 
     // When
     mockMvc
-        .perform(get(URI_TEMPLATE + "/status"))
+        .perform(get(STATUS_ENDPOINT))
         // Then
         .andExpect(status().isOk())
         .andExpect(content().json(FLIGHT_STATUS_JSON));
