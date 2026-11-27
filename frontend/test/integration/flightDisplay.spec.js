@@ -135,14 +135,25 @@ test("preserves previous flight data when API refresh fails", async ({
   await expect(page.locator("header p")).toHaveText("Showing 1 flights");
   await expect(page.locator(".flight-list-item")).toContainText("PRESERVED123");
 
-  // When: The dashboard attempts to refresh flight data.
+  // Initial request complete.
+  await expect.poll(getRequestCount).toBe(1);
+
+  // Start refresh after 120 sec.
   await page.clock.fastForward(120_000);
 
-  // Wait for all four failed attempts.
-  await page.clock.runFor(5000);
-  await page.clock.runFor(10000);
-  await page.clock.runFor(15000);
+  // first fail refresh.
+  await expect.poll(getRequestCount).toBe(2);
 
+  // First retry after 5 secs.
+  await page.clock.runFor(5000);
+  await expect.poll(getRequestCount).toBe(3);
+
+  // Second retry after 10 secs.
+  await page.clock.runFor(10000);
+  await expect.poll(getRequestCount).toBe(4);
+
+  // Third retry after 15 secs.
+  await page.clock.runFor(15000);
   await expect.poll(getRequestCount).toBe(5);
 
   // Then: The previous flight data is preserved

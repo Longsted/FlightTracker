@@ -107,18 +107,17 @@ test("displays a message when a search returns no flights", async ({
 }) => {
   await page.goto("/");
 
-  await page
-    .getByRole("searchbox", { name: "Search flights" })
-    .fill("NO-SUCH-FLIGHT");
-
-  const searchResponse = page.waitForResponse(
+  const searchResponsePromise = page.waitForResponse(
     (response) =>
       new URL(response.url()).pathname === API_ENDPOINTS.SEARCH &&
       response.status() === HTTP_STATUS.OK,
   );
+  await page
+    .getByRole("searchbox", { name: "Search flights" })
+    .fill("NO-SUCH-FLIGHT");
 
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await searchResponse;
+  await searchResponsePromise;
 
   await expect(flightItems(page)).toHaveCount(0);
   await expect(page.locator(".empty-state")).toHaveText(
@@ -171,4 +170,65 @@ test("filters flight markers by origin country", async ({ page }) => {
   await expect
     .poll(() => getMarkerOpacity(page, TEST_FLIGHTS.BRITISH_AIRWAYS.icao24))
     .toBe(1);
+});
+test("recovers when the backend becomes available after being unavailable", async ({
+  page,
+}) => {
+  // Given: The backend is initially unavailable.
+  const flight = {
+    icao24: "abc123",
+    callsign: "RECOVER123",
+    originCountry: "Denmark",
+    timePosition: 1730000000,
+    lastContact: 1730000000,
+    longitude: 12.5683,
+    latitude: 55.6761,
+    barometricAltitude: 10000,
+    onGround: false,
+    velocity: 250,
+    heading: 180,
+    verticalRate: 0,
+  };
+
+  let requestCount = 0;
+
+  await page.clock.install();
+
+  await page.route("**/api/flights", async (route) => {
+    requestCount++;
+
+    if (requestCount === 1) {
+      await route.fulfill({
+        status: 503,
+        body: JSON.stringify({ error: "Service unavailable" }),
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([flight]),
+      });
+    }
+  });
+
+  await page.route("**/api/flights/status", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ available: true }),
+    }),
+  );
+
+  await page.goto("/");
+
+  // Then: The initial request fails.
+  await expect.poll(() => requestCount).toBe(1);
+
+  // When: The first retry delay has elapsed.
+  await page.clock.runFor(5000);
+
+  // Then: The frontend retries and displays the recovered flight.
+  await expect.poll(() => requestCount).toBe(2);
+  await expect(flightItems(page)).toContainText("RECOVER123");
+  await expect(page.locator("header p")).toHaveText("Showing 1 flights");
 });

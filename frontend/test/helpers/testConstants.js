@@ -1,8 +1,14 @@
 export const API_ENDPOINTS = {
-  SEARCH: "**/api/flights/search**",
-  FILTER: "**/api/flights/filter**",
-  FLIGHTS: "**/api/flights",
-  FLIGHT_STATUS: "**/api/flights/status**",
+  SEARCH: "/api/flights/search",
+  FILTER: "/api/flights/filter",
+  FLIGHTS: "/api/flights",
+  FLIGHT_STATUS: "/api/flights/status",
+};
+export const API_ROUTE_PATTERNS = {
+  SEARCH: `**${API_ENDPOINTS.SEARCH}**`,
+  FILTER: `**${API_ENDPOINTS.FILTER}**`,
+  FLIGHTS: `**${API_ENDPOINTS.FLIGHTS}`,
+  FLIGHT_STATUS: `**${API_ENDPOINTS.FLIGHT_STATUS}**`,
 };
 export const HTTP_STATUS = {
   OK: 200,

@@ -1,4 +1,7 @@
-import { API_ENDPOINTS, HTTP_STATUS } from "../../helpers/testConstants.js";
+import {
+  API_ROUTE_PATTERNS,
+  HTTP_STATUS,
+} from "../../helpers/testConstants.js";
 
 const FLIGHT_STATUS_RESPONSE = {
   available: true,
@@ -22,7 +25,7 @@ export async function mockSearchAndFilterApi(
   const searchRequests = [];
   const filterRequests = [];
 
-  await page.route(API_ENDPOINTS.SEARCH, async (route) => {
+  await page.route(API_ROUTE_PATTERNS.SEARCH, async (route) => {
     searchRequestCount++;
 
     const url = new URL(route.request().url());
@@ -37,7 +40,7 @@ export async function mockSearchAndFilterApi(
     });
   });
 
-  await page.route(API_ENDPOINTS.FILTER, async (route) => {
+  await page.route(API_ROUTE_PATTERNS.FILTER, async (route) => {
     filterRequestCount++;
 
     const url = new URL(route.request().url());
@@ -88,7 +91,7 @@ export async function mockFlightApi(
 ) {
   let requestCount = 0;
 
-  await page.route(API_ENDPOINTS.FLIGHTS, async (route) => {
+  await page.route(API_ROUTE_PATTERNS.FLIGHTS, async (route) => {
     const snapshot = snapshots
       ? snapshots[Math.min(requestCount, snapshots.length - 1)]
       : { status, flights };
@@ -112,7 +115,7 @@ export async function mockFlightApi(
     });
   });
 
-  await page.route(API_ENDPOINTS.FLIGHT_STATUS, async (route) => {
+  await page.route(API_ROUTE_PATTERNS.FLIGHT_STATUS, async (route) => {
     await route.fulfill({
       status: HTTP_STATUS.OK,
       contentType: "application/json",
