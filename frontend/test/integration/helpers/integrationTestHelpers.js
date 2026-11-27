@@ -1,6 +1,14 @@
-import { expect } from "@playwright/test";
+import { API_ENDPOINTS, HTTP_STATUS } from "../../helpers/testConstants.js";
 
-/**
+const FLIGHT_STATUS_RESPONSE = {
+  available: true,
+  lastAttempt: "2026-11-19T10:00:00Z",
+  lastSuccessfulUpdate: "2026-11-19T10:00:00Z",
+};
+const ERROR_RESPONSE = {
+  error: "Internal Server Error",
+};
+/*
  * Mocks the search and filter endpoints.
  * Responses can be configured independently for each test.
  */
@@ -14,7 +22,7 @@ export async function mockSearchAndFilterApi(
   const searchRequests = [];
   const filterRequests = [];
 
-  await page.route("**/api/flights/search**", async (route) => {
+  await page.route(API_ENDPOINTS.SEARCH, async (route) => {
     searchRequestCount++;
 
     const url = new URL(route.request().url());
@@ -23,13 +31,13 @@ export async function mockSearchAndFilterApi(
     });
 
     await route.fulfill({
-      status: 200,
+      status: HTTP_STATUS.OK,
       contentType: "application/json",
       body: JSON.stringify(searchResults),
     });
   });
 
-  await page.route("**/api/flights/filter**", async (route) => {
+  await page.route(API_ENDPOINTS.FILTER, async (route) => {
     filterRequestCount++;
 
     const url = new URL(route.request().url());
@@ -37,7 +45,7 @@ export async function mockSearchAndFilterApi(
     filterRequests.push(Object.fromEntries(url.searchParams.entries()));
 
     await route.fulfill({
-      status: 200,
+      status: HTTP_STATUS.OK,
       contentType: "application/json",
       body: JSON.stringify(filteredFlights),
     });
@@ -49,37 +57,6 @@ export async function mockSearchAndFilterApi(
     searchRequests,
     filterRequests,
   };
-}
-
-export async function getFlightMarkerSvg(page, icao24) {
-  return page.evaluate((icao24) => {
-    const map = window.__OL_MAP__;
-    const flightLayer = map.getLayers().item(1);
-    const feature = flightLayer.getSource().getFeatureById(icao24);
-
-    const src = feature.getStyle().getImage().getSrc();
-
-    return decodeURIComponent(src.split(",")[1]);
-  }, icao24);
-}
-
-export async function waitForMapRender(page) {
-  await page.evaluate(() => {
-    const map = window.__OL_MAP__;
-
-    return new Promise((resolve) => {
-      map.once("rendercomplete", resolve);
-      map.renderSync();
-    });
-  });
-}
-
-export function flightDetail(page, field) {
-  return page.getByTestId(`flight-${field}`);
-}
-
-export function flightDetailsContent(page) {
-  return page.locator(".details-content");
 }
 
 // Creates a flight with default test data.
@@ -107,11 +84,11 @@ export function createFlight(overrides = {}) {
 // a status and flights property.
 export async function mockFlightApi(
   page,
-  { status = 200, flights = [], snapshots } = {},
+  { status = HTTP_STATUS.OK, flights = [], snapshots } = {},
 ) {
   let requestCount = 0;
 
-  await page.route("**/api/flights", async (route) => {
+  await page.route(API_ENDPOINTS.FLIGHTS, async (route) => {
     const snapshot = snapshots
       ? snapshots[Math.min(requestCount, snapshots.length - 1)]
       : { status, flights };
@@ -119,8 +96,8 @@ export async function mockFlightApi(
     requestCount++;
 
     const currentStatus = Array.isArray(snapshot)
-      ? 200
-      : (snapshot.status ?? 200);
+      ? HTTP_STATUS.OK
+      : (snapshot.status ?? HTTP_STATUS.OK);
 
     const currentFlights = Array.isArray(snapshot)
       ? snapshot
@@ -130,45 +107,17 @@ export async function mockFlightApi(
       status: currentStatus,
       contentType: "application/json",
       body: JSON.stringify(
-        currentStatus === 200
-          ? currentFlights
-          : { error: "Internal Server Error" },
+        currentStatus === HTTP_STATUS.OK ? currentFlights : ERROR_RESPONSE,
       ),
     });
   });
 
-  await page.route("**/api/flights/status**", async (route) => {
+  await page.route(API_ENDPOINTS.FLIGHT_STATUS, async (route) => {
     await route.fulfill({
-      status: 200,
+      status: HTTP_STATUS.OK,
       contentType: "application/json",
-      body: JSON.stringify({
-        available: true,
-        lastAttempt: "2026-11-19T10:00:00Z",
-        lastSuccessfulUpdate: "2026-11-19T10:00:00Z",
-      }),
+      body: JSON.stringify(FLIGHT_STATUS_RESPONSE),
     });
   });
   return () => requestCount;
-}
-
-// Clicks a flight at its geographic position.
-export async function clickFlightPosition(page, longitude, latitude) {
-  const mapElement = page.locator("#flight-map");
-
-  await expect(mapElement.locator(".ol-viewport")).toBeVisible();
-  await waitForMapRender(page);
-
-  const pixel = await page.evaluate(
-    ([longitude, latitude]) => {
-      const map = window.__OL_MAP__;
-      const coordinate = window.__OL_FROM_LON_LAT__([longitude, latitude]);
-
-      return map.getPixelFromCoordinate(coordinate);
-    },
-    [longitude, latitude],
-  );
-
-  const bounds = await mapElement.boundingBox();
-
-  await page.mouse.click(bounds.x + pixel[0], bounds.y + pixel[1]);
 }

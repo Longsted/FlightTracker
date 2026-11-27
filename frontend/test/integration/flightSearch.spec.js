@@ -1,10 +1,10 @@
-import { test, expect } from "./fixtures/testFixtures.js";
+import { test, expect } from "../fixtures/testFixtures.js";
 import {
   createFlight,
   mockFlightApi,
   mockSearchAndFilterApi,
 } from "./helpers/integrationTestHelpers.js";
-
+import { TEST_FLIGHTS } from "../helpers/testConstants.js";
 // ========================================
 // Flight search
 // ========================================
@@ -14,8 +14,8 @@ test("finds flights by partial callsign regardless of letter case", async ({
 }) => {
   // Given: Multiple flights are available.
   const flights = [
-    createFlight({ icao24: "abc123", callsign: "SAS123" }),
-    createFlight({ icao24: "def456", callsign: "DLH456" }),
+    createFlight({ ...TEST_FLIGHTS.SAS }),
+    createFlight({ ...TEST_FLIGHTS.LUFTHANSA }),
   ];
 
   await mockFlightApi(page, { flights });
@@ -42,8 +42,8 @@ test("finds flights by partial callsign regardless of letter case", async ({
 test("finds flights by ICAO24", async ({ page }) => {
   // Given: Multiple flights are available.
   const flights = [
-    createFlight({ icao24: "abc123", callsign: "SAS123" }),
-    createFlight({ icao24: "def456", callsign: "DLH456" }),
+    createFlight({ ...TEST_FLIGHTS.SAS }),
+    createFlight({ ...TEST_FLIGHTS.LUFTHANSA }),
   ];
 
   await mockFlightApi(page, { flights });
@@ -64,8 +64,12 @@ test("finds flights by ICAO24", async ({ page }) => {
 
   // Then: The corresponding flight is displayed.
   await expect(page.locator(".flight-list-item")).toHaveCount(1);
-  await expect(page.locator(".flight-list-item")).toContainText("DLH456");
-  await expect(page.locator(".flight-list-item")).toContainText("def456");
+  await expect(page.locator(".flight-list-item")).toContainText(
+    TEST_FLIGHTS.LUFTHANSA.callsign,
+  );
+  await expect(page.locator(".flight-list-item")).toContainText(
+    TEST_FLIGHTS.LUFTHANSA.icao24,
+  );
 });
 
 test("displays a message when no flights match the search", async ({
@@ -73,7 +77,7 @@ test("displays a message when no flights match the search", async ({
 }) => {
   // Given: A flight is available, but the search returns no results.
   await mockFlightApi(page, {
-    flights: [createFlight({ callsign: "SAS123" })],
+    flights: [createFlight({ ...TEST_FLIGHTS.SAS })],
   });
 
   const apiMock = await mockSearchAndFilterApi(page, {
@@ -101,8 +105,8 @@ test("clears the search and restores all available flights", async ({
 }) => {
   // Given: Multiple flights are available and a search has been performed.
   const flights = [
-    createFlight({ callsign: "SAS123" }),
-    createFlight({ icao24: "def456", callsign: "DLH456" }),
+    createFlight({ ...TEST_FLIGHTS.SAS }),
+    createFlight({ ...TEST_FLIGHTS.LUFTHANSA }),
   ];
 
   await mockFlightApi(page, { flights });

@@ -1,9 +1,11 @@
-import { test, expect } from "./fixtures/testFixtures.js";
+import { test, expect } from "../fixtures/testFixtures.js";
 import {
   createFlight,
   mockFlightApi,
   mockSearchAndFilterApi,
 } from "./helpers/integrationTestHelpers.js";
+import { TEST_FLIGHTS, TEST_COUNTRIES } from "../helpers/testConstants.js";
+import { getMarkerOpacities } from "../helpers/mapHelpers.js";
 
 // ========================================
 // Flight filters
@@ -13,14 +15,12 @@ test("filters flights by origin country", async ({ page }) => {
   // Given: Flights from different countries are available.
   const flights = [
     createFlight({
-      icao24: "abc123",
-      callsign: "SAS123",
-      originCountry: "Denmark",
+      ...TEST_FLIGHTS.SAS,
+      originCountry: TEST_COUNTRIES.DENMARK,
     }),
     createFlight({
-      icao24: "def456",
-      callsign: "DLH456",
-      originCountry: "Germany",
+      ...TEST_FLIGHTS.LUFTHANSA,
+      originCountry: TEST_COUNTRIES.GERMANY,
     }),
   ];
 
@@ -33,35 +33,34 @@ test("filters flights by origin country", async ({ page }) => {
   await page.goto("/");
 
   // When: The user filters by Denmark.
-  await page.getByLabel("Origin country").selectOption("Denmark");
+  await page.getByLabel("Origin country").selectOption(TEST_COUNTRIES.DENMARK);
 
   // Then: The filter endpoint receives the selected country.
   await expect.poll(() => apiMock.filterRequestCount()).toBe(1);
   expect(apiMock.filterRequests[0]).toMatchObject({
-    originCountry: "Denmark",
+    originCountry: TEST_COUNTRIES.DENMARK,
   });
 
   // Then: Only flights originating from Denmark are displayed.
   await expect(page.locator(".flight-list-item")).toHaveCount(1);
-  await expect(page.locator(".flight-list-item")).toContainText("SAS123");
+  await expect(page.locator(".flight-list-item")).toContainText(
+    TEST_FLIGHTS.SAS.callsign,
+  );
 });
 
 test("filters flights within an altitude range", async ({ page }) => {
   // Given: Flights with different altitudes are available.
   const flights = [
     createFlight({
-      icao24: "abc123",
-      callsign: "LOW123",
+      ...TEST_FLIGHTS.SAS,
       barometricAltitude: 1000,
     }),
     createFlight({
-      icao24: "def456",
-      callsign: "MID456",
+      ...TEST_FLIGHTS.LUFTHANSA,
       barometricAltitude: 5000,
     }),
     createFlight({
-      icao24: "ghi789",
-      callsign: "HIGH789",
+      ...TEST_FLIGHTS.BRITISH_AIRWAYS,
       barometricAltitude: 10000,
     }),
   ];
@@ -81,15 +80,20 @@ test("filters flights within an altitude range", async ({ page }) => {
   await altitudeInputs.nth(1).fill("6000");
 
   // Then: The filter endpoint receives the selected range.
-  await expect.poll(() => apiMock.filterRequestCount()).toBeGreaterThan(0);
-  expect(apiMock.filterRequests.at(-1)).toMatchObject({
-    minAltitude: "4000",
-    maxAltitude: "6000",
-  });
+  await expect
+    .poll(() =>
+      apiMock.filterRequests.some(
+        (request) =>
+          request.minAltitude === "4000" && request.maxAltitude === "6000",
+      ),
+    )
+    .toBe(true);
 
   // Then: Only flights within the selected range are displayed.
   await expect(page.locator(".flight-list-item")).toHaveCount(1);
-  await expect(page.locator(".flight-list-item")).toContainText("MID456");
+  await expect(page.locator(".flight-list-item")).toContainText(
+    TEST_FLIGHTS.LUFTHANSA.callsign,
+  );
 });
 
 test("filters flights by velocity", async ({ page }) => {
@@ -135,12 +139,12 @@ test("filters flights by airborne and on-ground status", async ({ page }) => {
   // Given: Both airborne and on-ground flights are available.
   const flights = [
     createFlight({
-      icao24: "abc123",
+      icao24: TEST_FLIGHTS.SAS.icao24,
       callsign: "AIR123",
       onGround: false,
     }),
     createFlight({
-      icao24: "def456",
+      icao24: TEST_FLIGHTS.LUFTHANSA.icao24,
       callsign: "GROUND456",
       onGround: true,
     }),
@@ -172,30 +176,30 @@ test("combines multiple active filters", async ({ page }) => {
   // Given: Flights with different countries, altitudes and statuses.
   const flights = [
     createFlight({
-      icao24: "abc123",
+      icao24: TEST_FLIGHTS.SAS.icao24,
       callsign: "MATCH123",
-      originCountry: "Denmark",
+      originCountry: TEST_COUNTRIES.DENMARK,
       barometricAltitude: 8000,
       onGround: false,
     }),
     createFlight({
-      icao24: "def456",
+      icao24: TEST_FLIGHTS.LUFTHANSA.icao24,
       callsign: "WRONG-COUNTRY",
-      originCountry: "Germany",
+      originCountry: TEST_COUNTRIES.GERMANY,
       barometricAltitude: 8000,
       onGround: false,
     }),
     createFlight({
-      icao24: "ghi789",
+      icao24: TEST_FLIGHTS.BRITISH_AIRWAYS.icao24,
       callsign: "WRONG-STATUS",
-      originCountry: "Denmark",
+      originCountry: TEST_COUNTRIES.DENMARK,
       barometricAltitude: 8000,
       onGround: true,
     }),
     createFlight({
       icao24: "jkl012",
       callsign: "WRONG-ALTITUDE",
-      originCountry: "Denmark",
+      originCountry: TEST_COUNTRIES.DENMARK,
       barometricAltitude: 2000,
       onGround: false,
     }),
@@ -210,7 +214,7 @@ test("combines multiple active filters", async ({ page }) => {
   await page.goto("/");
 
   // When: The user applies country, altitude and flight-status filters.
-  await page.getByLabel("Origin country").selectOption("Denmark");
+  await page.getByLabel("Origin country").selectOption(TEST_COUNTRIES.DENMARK);
 
   const altitudeInputs = page.locator(".flight-filters input[type='number']");
 
@@ -222,7 +226,7 @@ test("combines multiple active filters", async ({ page }) => {
     .poll(() =>
       apiMock.filterRequests.some(
         (request) =>
-          request.originCountry === "Denmark" &&
+          request.originCountry === TEST_COUNTRIES.DENMARK &&
           request.minAltitude === "5000" &&
           request.onGround === "false",
       ),
@@ -238,15 +242,13 @@ test("clears active filters and restores all flights", async ({ page }) => {
   // Given: Multiple flights are available and filters are active.
   const flights = [
     createFlight({
-      icao24: "abc123",
-      callsign: "SAS123",
-      originCountry: "Denmark",
+      ...TEST_FLIGHTS.SAS,
+      originCountry: TEST_COUNTRIES.DENMARK,
       onGround: false,
     }),
     createFlight({
-      icao24: "def456",
-      callsign: "DLH456",
-      originCountry: "Germany",
+      ...TEST_FLIGHTS.LUFTHANSA,
+      originCountry: TEST_COUNTRIES.GERMANY,
       onGround: true,
     }),
   ];
@@ -259,7 +261,7 @@ test("clears active filters and restores all flights", async ({ page }) => {
 
   await page.goto("/");
 
-  await page.getByLabel("Origin country").selectOption("Denmark");
+  await page.getByLabel("Origin country").selectOption(TEST_COUNTRIES.DENMARK);
   await page.getByLabel("Flight status").selectOption("false");
 
   await expect.poll(() => apiMock.filterRequestCount()).toBeGreaterThan(0);
@@ -281,12 +283,12 @@ test("handles flights with missing altitude when filtering", async ({
   // Given: Flights are available, including one without altitude data.
   const flights = [
     createFlight({
-      icao24: "abc123",
+      icao24: TEST_FLIGHTS.SAS.icao24,
       callsign: "KNOWN123",
       barometricAltitude: 8000,
     }),
     createFlight({
-      icao24: "def456",
+      icao24: TEST_FLIGHTS.LUFTHANSA.icao24,
       callsign: "UNKNOWN456",
       barometricAltitude: null,
     }),
@@ -323,14 +325,12 @@ test("applies filters to both the flight list and map markers", async ({
   // Given: Flights from different countries are available.
   const flights = [
     createFlight({
-      icao24: "abc123",
-      callsign: "SAS123",
-      originCountry: "Denmark",
+      ...TEST_FLIGHTS.SAS,
+      originCountry: TEST_COUNTRIES.DENMARK,
     }),
     createFlight({
-      icao24: "def456",
-      callsign: "DLH456",
-      originCountry: "Germany",
+      ...TEST_FLIGHTS.LUFTHANSA,
+      originCountry: TEST_COUNTRIES.GERMANY,
     }),
   ];
 
@@ -343,31 +343,22 @@ test("applies filters to both the flight list and map markers", async ({
   await page.goto("/");
 
   // When: The user filters by Denmark.
-  await page.getByLabel("Origin country").selectOption("Denmark");
+  await page.getByLabel("Origin country").selectOption(TEST_COUNTRIES.DENMARK);
 
   // Then: The filter request is completed.
   await expect.poll(() => apiMock.filterRequestCount()).toBe(1);
 
   // Then: Only the matching flight is displayed in the list.
   await expect(page.locator(".flight-list-item")).toHaveCount(1);
-  await expect(page.locator(".flight-list-item")).toContainText("SAS123");
+  await expect(page.locator(".flight-list-item")).toContainText(
+    TEST_FLIGHTS.SAS.callsign,
+  );
 
   // Then: Only the matching marker is visible on the map.
-  const markerOpacities = await page.evaluate(() => {
-    const source = window.__OL_MAP__.getLayers().item(1).getSource();
+  const markerOpacities = await getMarkerOpacities(page);
 
-    return Object.fromEntries(
-      source
-        .getFeatures()
-        .map((feature) => [
-          feature.getId(),
-          feature.getStyle().getImage().getOpacity(),
-        ]),
-    );
-  });
-
-  expect(markerOpacities["abc123"]).toBe(1);
-  expect(markerOpacities["def456"]).toBe(0);
+  expect(markerOpacities[TEST_FLIGHTS.SAS.icao24]).toBe(1);
+  expect(markerOpacities[TEST_FLIGHTS.LUFTHANSA.icao24]).toBe(0);
 });
 
 test("handles flights with missing velocity when filtering", async ({
@@ -376,12 +367,12 @@ test("handles flights with missing velocity when filtering", async ({
   // Given: Flights are available, including one without velocity data.
   const flights = [
     createFlight({
-      icao24: "abc123",
+      icao24: TEST_FLIGHTS.SAS.icao24,
       callsign: "FAST123",
       velocity: 250,
     }),
     createFlight({
-      icao24: "def456",
+      icao24: TEST_FLIGHTS.LUFTHANSA.icao24,
       callsign: "UNKNOWN456",
       velocity: null,
     }),
@@ -418,12 +409,11 @@ test("handles flights with missing origin country when filtering", async ({
   // Given: Flights are available, including one without origin country.
   const flights = [
     createFlight({
-      icao24: "abc123",
-      callsign: "SAS123",
-      originCountry: "Denmark",
+      ...TEST_FLIGHTS.SAS,
+      originCountry: TEST_COUNTRIES.DENMARK,
     }),
     createFlight({
-      icao24: "def456",
+      icao24: TEST_FLIGHTS.LUFTHANSA.icao24,
       callsign: "UNKNOWN456",
       originCountry: null,
     }),
@@ -438,16 +428,18 @@ test("handles flights with missing origin country when filtering", async ({
   await page.goto("/");
 
   // When: The user filters by Denmark.
-  await page.getByLabel("Origin country").selectOption("Denmark");
+  await page.getByLabel("Origin country").selectOption(TEST_COUNTRIES.DENMARK);
 
   // Then: The filter endpoint receives the selected country.
   await expect.poll(() => apiMock.filterRequestCount()).toBe(1);
 
   expect(apiMock.filterRequests[0]).toMatchObject({
-    originCountry: "Denmark",
+    originCountry: TEST_COUNTRIES.DENMARK,
   });
 
   // Then: Only the matching flight is displayed.
   await expect(page.locator(".flight-list-item")).toHaveCount(1);
-  await expect(page.locator(".flight-list-item")).toContainText("SAS123");
+  await expect(page.locator(".flight-list-item")).toContainText(
+    TEST_FLIGHTS.SAS.callsign,
+  );
 });
