@@ -74,8 +74,7 @@ class FlightControllerIntegrationTest {
         .perform(get(SEARCH_ENDPOINT).param("query", "SAS"))
         // Then
         .andExpect(status().isOk())
-        .andExpect(content().json(SINGLE_FLIGHT_JSON)
-        );
+        .andExpect(content().json(SINGLE_FLIGHT_JSON));
   }
 
   @Test
